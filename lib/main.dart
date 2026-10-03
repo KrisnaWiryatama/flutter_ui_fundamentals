@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 
 // Identitas Mahasiswa Wajib
 const String studentName = 'Putu Krisna Wiryatama';
@@ -22,207 +20,196 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
         useMaterial3: true,
       ),
-      home: const Tahap5Page(),
+      home: const Tahap6Page(),
     );
   }
 }
 
-class Tahap5Page extends StatefulWidget {
-  const Tahap5Page({super.key});
+class Tahap6Page extends StatefulWidget {
+  const Tahap6Page({super.key});
 
   @override
-  State<Tahap5Page> createState() => _Tahap5PageState();
+  State<Tahap6Page> createState() => _Tahap6PageState();
 }
 
-class _Tahap5PageState extends State<Tahap5Page> {
-  late Future<Map<String, dynamic>> dashboardFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    dashboardFuture = loadStudentData();
-  }
-
-  Future<Map<String, dynamic>> loadStudentData() async {
-    final jsonString = await rootBundle.loadString('assets/data/student_data.json');
-    return jsonDecode(jsonString) as Map<String, dynamic>;
-  }
-
-  // ========================================================
-  // FUNGSI HELPER: MENENTUKAN JUMLAH KOLOM BERDASARKAN LEBAR
-  // ========================================================
-  int columnsFor(double width) {
-    if (width < 600) return 1;
-    if (width < 840) return 2;
-    return 3;
-  }
+class _Tahap6PageState extends State<Tahap6Page> {
+  // Flag simulasi:
+  // true  -> Menggunakan SingleChildScrollView (Solusi anti-overflow saat keyboard muncul)
+  // false -> Tanpa SingleChildScrollView (Memicu Bottom Overflow saat keyboard muncul)
+  bool useScrollView = true;
 
   @override
   Widget build(BuildContext context) {
+    // Konten formulir yang disusun vertikal
+    Widget contentBody = Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Banner Status Uji
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: useScrollView ? Colors.green.shade50 : Colors.red.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: useScrollView ? Colors.green : Colors.red,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  useScrollView ? Icons.check_circle : Icons.warning,
+                  color: useScrollView ? Colors.green : Colors.red,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    useScrollView
+                        ? 'SingleChildScrollView: AKTIF (Scrollable)'
+                        : 'SingleChildScrollView: NONAKTIF (Overflow)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: useScrollView ? Colors.green.shade800 : Colors.red.shade800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Kartu Identitas Mahasiswa
+          Card(
+            elevation: 2,
+            color: Colors.blue.shade50,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: const Padding(
+              padding: EdgeInsets.all(14.0),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundImage: AssetImage('assets/images/Nyengir.jpg'),
+                  ),
+                  SizedBox(width: 14),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(studentName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      Text('NIM: $studentId', style: TextStyle(fontSize: 13)),
+                      Text('Pendidikan Teknik Informatika', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          const Text(
+            'Form Profil & Feedback Course',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+
+          // Field 1: Nama Lengkap
+          TextFormField(
+            initialValue: studentName,
+            decoration: const InputDecoration(
+              labelText: 'Nama Lengkap',
+              prefixIcon: Icon(Icons.person),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Field 2: NIM
+          TextFormField(
+            initialValue: studentId,
+            decoration: const InputDecoration(
+              labelText: 'NIM',
+              prefixIcon: Icon(Icons.badge),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Field 3: Program Studi
+          TextFormField(
+            initialValue: 'Pendidikan Teknik Informatika',
+            decoration: const InputDecoration(
+              labelText: 'Program Studi',
+              prefixIcon: Icon(Icons.school),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Field 4: Catatan / Feedback (Fokus keyboard)
+          TextFormField(
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Komentar / Feedback Pembelajaran',
+              hintText: 'Ketik feedback di sini untuk memunculkan keyboard...',
+              prefixIcon: Icon(Icons.feedback),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Tombol Aksi
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Form berhasil disubmit!')),
+                );
+              },
+              icon: const Icon(Icons.save),
+              label: const Text('Simpan Perubahan', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Tahap 5: GridView Responsif',
+          'Tahap 6: Scrollable Content',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.blueAccent,
-        elevation: 0,
-      ),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: dashboardFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)),
-              ),
-            );
-          }
-
-          final data = snapshot.data!;
-          final courses = data['courses'] as List<dynamic>;
-
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final int columnCount = columnsFor(constraints.maxWidth);
-
-              return Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Card(
-                      elevation: 2,
-                      color: Colors.blue.shade50,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(14.0),
-                        child: Row(
-                          children: [
-                            const CircleAvatar(
-                              radius: 24,
-                              backgroundImage: AssetImage('assets/images/Nyengir.jpg'),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '$studentId - $studentName',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Lebar: ${constraints.maxWidth.toStringAsFixed(0)} px  |  Kolom Grid: $columnCount Kolom',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: columnCount == 1
-                                          ? Colors.orange.shade800
-                                          : (columnCount == 2 ? Colors.blue.shade800 : Colors.green.shade800),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Daftar Course (Adaptive Grid)',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // ========================================================
-                    // GRIDVIEW BUILDER DENGAN JUMLAH KOLOM DINAMIS
-                    // ========================================================
-                    Expanded(
-                      child: GridView.builder(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: columnCount,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: columnCount == 1 ? 3.2 : (columnCount == 2 ? 2.4 : 2.0),
-                        ),
-                        itemCount: courses.length,
-                        itemBuilder: (context, index) {
-                          final item = courses[index] as Map<String, dynamic>;
-                          final String status = item['status'] as String;
-                          Color statusColor = status == 'done'
-                              ? Colors.green
-                              : (status == 'active' ? Colors.orange : Colors.grey);
-                          String statusText = status == 'done'
-                              ? 'Selesai'
-                              : (status == 'active' ? 'Berjalan' : 'Belum');
-
-                          return Card(
-                            elevation: 1.5,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              child: Row(
-                                children: [
-                                  CircleAvatar(
-                                    backgroundColor: statusColor.withOpacity(0.15),
-                                    child: Icon(Icons.school, color: statusColor, size: 20),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          item['title'] as String,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '${item['code']} • ${item['credits']} SKS',
-                                          style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: statusColor.withOpacity(0.12),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      statusText,
-                                      style: TextStyle(
-                                        color: statusColor,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              );
+        actions: [
+          // Tombol toggle untuk menguji perbandingan sebelum vs sesudah SingleChildScrollView
+          IconButton(
+            tooltip: 'Toggle ScrollView',
+            icon: Icon(useScrollView ? Icons.lock_open : Icons.lock),
+            onPressed: () {
+              setState(() {
+                useScrollView = !useScrollView;
+              });
             },
-          );
-        },
+          ),
+        ],
       ),
+      // ========================================================
+      // PENERAPAN SINGLECHILDSCROLLVIEW (SESUAI TAHAP 6)
+      // ========================================================
+      body: useScrollView
+          ? SingleChildScrollView(child: contentBody)
+          : contentBody,
     );
   }
 }

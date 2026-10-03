@@ -20,196 +20,184 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
         useMaterial3: true,
       ),
-      home: const Tahap6Page(),
+      home: const HomePage(),
     );
   }
 }
 
-class Tahap6Page extends StatefulWidget {
-  const Tahap6Page({super.key});
-
-  @override
-  State<Tahap6Page> createState() => _Tahap6PageState();
-}
-
-class _Tahap6PageState extends State<Tahap6Page> {
-  // Flag simulasi:
-  // true  -> Menggunakan SingleChildScrollView (Solusi anti-overflow saat keyboard muncul)
-  // false -> Tanpa SingleChildScrollView (Memicu Bottom Overflow saat keyboard muncul)
-  bool useScrollView = true;
+// =========================================================================
+// 1. HOME PAGE (Screen Asal / Stack Dasar)
+// =========================================================================
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Konten formulir yang disusun vertikal
-    Widget contentBody = Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Banner Status Uji
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: useScrollView ? Colors.green.shade50 : Colors.red.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: useScrollView ? Colors.green : Colors.red,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Home Page',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        backgroundColor: Colors.blueAccent,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Card(
+              elevation: 2,
+              color: Colors.blue.shade50,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              child: const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundImage: AssetImage('assets/images/Nyengir.jpg'),
+                    ),
+                    SizedBox(width: 14),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(studentName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text('NIM: $studentId', style: TextStyle(fontSize: 13)),
+                        Text('Pendidikan Teknik Informatika', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-            child: Row(
-              children: [
-                Icon(
-                  useScrollView ? Icons.check_circle : Icons.warning,
-                  color: useScrollView ? Colors.green : Colors.red,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    useScrollView
-                        ? 'SingleChildScrollView: AKTIF (Scrollable)'
-                        : 'SingleChildScrollView: NONAKTIF (Overflow)',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      color: useScrollView ? Colors.green.shade800 : Colors.red.shade800,
-                    ),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 32),
+            const Text(
+              'Demonstrasi Navigasi Stack:',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 8),
+            const Text(
+              'Tekan tombol di bawah untuk memanggil Navigator.push() dan menambahkan DetailPage ke atas stack navigasi.',
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.arrow_forward),
+                label: const Text(
+                  'Buka Detail',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DetailPage(),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-          // Kartu Identitas Mahasiswa
-          Card(
-            elevation: 2,
-            color: Colors.blue.shade50,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: const Padding(
-              padding: EdgeInsets.all(14.0),
-              child: Row(
+// =========================================================================
+// 2. DETAIL PAGE (Screen Tujuan / Stack Teratas)
+// =========================================================================
+class DetailPage extends StatelessWidget {
+  const DetailPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Detail Page',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.indigo.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.indigo.shade200),
+              ),
+              child: const Row(
                 children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundImage: AssetImage('assets/images/Nyengir.jpg'),
-                  ),
-                  SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(studentName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      Text('NIM: $studentId', style: TextStyle(fontSize: 13)),
-                      Text('Pendidikan Teknik Informatika', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
-                    ],
+                  Icon(Icons.layers, color: Colors.indigo),
+                  SizedBox(width: 10),
+                  Text(
+                    'Route aktif di atas Navigation Stack',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo),
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-
-          const Text(
-            'Form Profil & Feedback Course',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-
-          // Field 1: Nama Lengkap
-          TextFormField(
-            initialValue: studentName,
-            decoration: const InputDecoration(
-              labelText: 'Nama Lengkap',
-              prefixIcon: Icon(Icons.person),
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Field 2: NIM
-          TextFormField(
-            initialValue: studentId,
-            decoration: const InputDecoration(
-              labelText: 'NIM',
-              prefixIcon: Icon(Icons.badge),
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Field 3: Program Studi
-          TextFormField(
-            initialValue: 'Pendidikan Teknik Informatika',
-            decoration: const InputDecoration(
-              labelText: 'Program Studi',
-              prefixIcon: Icon(Icons.school),
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Field 4: Catatan / Feedback (Fokus keyboard)
-          TextFormField(
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Komentar / Feedback Pembelajaran',
-              hintText: 'Ketik feedback di sini untuk memunculkan keyboard...',
-              prefixIcon: Icon(Icons.feedback),
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Tombol Aksi
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            const SizedBox(height: 20),
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Informasi Halaman Detail',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    ),
+                    Divider(height: 20),
+                    Text('Mahasiswa: $studentName', style: TextStyle(fontSize: 14)),
+                    SizedBox(height: 4),
+                    Text('NIM: $studentId', style: TextStyle(fontSize: 14)),
+                  ],
+                ),
               ),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Form berhasil disubmit!')),
-                );
-              },
-              icon: const Icon(Icons.save),
-              label: const Text('Simpan Perubahan', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
-          ),
-          const SizedBox(height: 12),
-        ],
-      ),
-    );
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Tahap 6: Scrollable Content',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            const Spacer(),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.indigo,
+                  side: const BorderSide(color: Colors.indigo, width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.arrow_back),
+                label: const Text(
+                  'Kembali ke Home',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
         ),
-        backgroundColor: Colors.blueAccent,
-        actions: [
-          // Tombol toggle untuk menguji perbandingan sebelum vs sesudah SingleChildScrollView
-          IconButton(
-            tooltip: 'Toggle ScrollView',
-            icon: Icon(useScrollView ? Icons.lock_open : Icons.lock),
-            onPressed: () {
-              setState(() {
-                useScrollView = !useScrollView;
-              });
-            },
-          ),
-        ],
       ),
-      // ========================================================
-      // PENERAPAN SINGLECHILDSCROLLVIEW (SESUAI TAHAP 6)
-      // ========================================================
-      body: useScrollView
-          ? SingleChildScrollView(child: contentBody)
-          : contentBody,
     );
   }
 }

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
+// Identitas Mahasiswa
 const String studentName = 'Putu Krisna Wiryatama';
 const String studentId = '2415051099';
 
@@ -34,6 +35,9 @@ class LearningDashboardPage extends StatefulWidget {
 
 class _LearningDashboardPageState extends State<LearningDashboardPage> {
   late Future<Map<String, dynamic>> dashboardFuture;
+  
+  // Set true untuk screenshot overflow bug, set false untuk screenshot hasil perbaikan
+  bool showOverflowBug = true;
 
   @override
   void initState() {
@@ -126,7 +130,7 @@ class _LearningDashboardPageState extends State<LearningDashboardPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Learning Dashboard',
+          'Learning Dashboard - Tahap 1',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.blueAccent,
@@ -208,6 +212,43 @@ class _LearningDashboardPageState extends State<LearningDashboardPage> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 12),
+
+                // ========================================================
+                // IMPLEMENTASI TAHAP 1: SESUAI WORKSHEET PERTEMUAN 5
+                // ========================================================
+                if (showOverflowBug)
+                  // Membungkus dalam Row agar lebar 500px tidak dipaksa mengecil oleh parent Column
+                  // sehingga memicu RenderFlex Overflow strip kuning-hitam di layar ponsel
+                  Row(
+                    children: [
+                      Container(
+                        width: 500,
+                        padding: const EdgeInsets.all(16),
+                        color: Colors.amber.shade200,
+                        child: Text(
+                          '$studentId - $studentName [Hard-coded 500px]',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  // Solusi sesuai modul: ubah width tetap menjadi double.infinity atau Expanded
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          color: Colors.green.shade200,
+                          child: Text(
+                            '$studentId - $studentName [Solusi: Expanded / Fleksibel]',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: 12),
 
                 // Baris Ringkasan

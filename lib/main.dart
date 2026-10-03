@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
-// Identitas Mahasiswa
 const String studentName = 'Putu Krisna Wiryatama';
 const String studentId = '2415051099';
 
@@ -35,9 +34,6 @@ class LearningDashboardPage extends StatefulWidget {
 
 class _LearningDashboardPageState extends State<LearningDashboardPage> {
   late Future<Map<String, dynamic>> dashboardFuture;
-  
-  // Set true untuk screenshot overflow bug, set false untuk screenshot hasil perbaikan
-  bool showOverflowBug = true;
 
   @override
   void initState() {
@@ -127,10 +123,14 @@ class _LearningDashboardPageState extends State<LearningDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final orientation = MediaQuery.of(context).orientation;
+    final String screenCategory = size.width < 600 ? 'Compact' : 'Wide';
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Learning Dashboard - Tahap 1',
+          'Learning Dashboard - Tahap 2',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.blueAccent,
@@ -213,45 +213,50 @@ class _LearningDashboardPageState extends State<LearningDashboardPage> {
                   ),
                 ),
                 const SizedBox(height: 12),
-
-                // ========================================================
-                // IMPLEMENTASI TAHAP 1: SESUAI WORKSHEET PERTEMUAN 5
-                // ========================================================
-                if (showOverflowBug)
-                  // Membungkus dalam Row agar lebar 500px tidak dipaksa mengecil oleh parent Column
-                  // sehingga memicu RenderFlex Overflow strip kuning-hitam di layar ponsel
-                  Row(
-                    children: [
-                      Container(
-                        width: 500,
-                        padding: const EdgeInsets.all(16),
-                        color: Colors.amber.shade200,
-                        child: Text(
-                          '$studentId - $studentName [Hard-coded 500px]',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                Card(
+                  elevation: 2,
+                  color: Colors.teal.shade50,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Identitas: $studentId - $studentName',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.teal),
                         ),
-                      ),
-                    ],
-                  )
-                else
-                  // Solusi sesuai modul: ubah width tetap menjadi double.infinity atau Expanded
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          color: Colors.green.shade200,
-                          child: Text(
-                            '$studentId - $studentName [Solusi: Expanded / Fleksibel]',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
+                        const Divider(height: 14),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Width: ${size.width.toStringAsFixed(0)} px', style: const TextStyle(fontSize: 12)),
+                            Text('Height: ${size.height.toStringAsFixed(0)} px', style: const TextStyle(fontSize: 12)),
+                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Orientation: ${orientation.name}', style: const TextStyle(fontSize: 12)),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: screenCategory == 'Compact' ? Colors.orange : Colors.indigo,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'Layout: $screenCategory',
+                                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
+                ),
                 const SizedBox(height: 12),
-
-                // Baris Ringkasan
                 Row(
                   children: [
                     _buildSummaryCard('Topik', '$totalCourses', Colors.blueAccent, Icons.topic),

@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 
 // Identitas Mahasiswa Wajib
 const String studentName = 'Putu Krisna Wiryatama';
@@ -22,77 +20,50 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
         useMaterial3: true,
       ),
-      home: const Tahap12InteractionPage(),
+      home: const Tahap13FormPage(),
     );
   }
 }
 
-class Tahap12InteractionPage extends StatefulWidget {
-  const Tahap12InteractionPage({super.key});
+class Tahap13FormPage extends StatefulWidget {
+  const Tahap13FormPage({super.key});
 
   @override
-  State<Tahap12InteractionPage> createState() => _Tahap12InteractionPageState();
+  State<Tahap13FormPage> createState() => _Tahap13FormPageState();
 }
 
-class _Tahap12InteractionPageState extends State<Tahap12InteractionPage> {
-  late Future<Map<String, dynamic>> dashboardFuture;
-  
-  // Set untuk menyimpan ID/kode course yang difavoritkan
-  final Set<String> favoriteCourses = {};
+class _Tahap13FormPageState extends State<Tahap13FormPage> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController(text: studentName);
+  final TextEditingController _nimController = TextEditingController(text: studentId);
+  final TextEditingController _commentController = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-    dashboardFuture = loadStudentData();
+  void dispose() {
+    _nameController.dispose();
+    _nimController.dispose();
+    _commentController.dispose();
+    super.dispose();
   }
 
-  Future<Map<String, dynamic>> loadStudentData() async {
-    final jsonString = await rootBundle.loadString('assets/data/student_data.json');
-    return jsonDecode(jsonString) as Map<String, dynamic>;
-  }
-
-  void _showDetailModal(Map<String, dynamic> item) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    item['code'] as String,
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent),
-                  ),
-                  Text(
-                    'Praktikan: $studentId',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                item['title'] as String,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Materi ini berbobot ${item['credits']} SKS dan berstatus ${item['status']}',
-                style: const TextStyle(fontSize: 13, color: Colors.black87),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        );
-      },
-    );
+  void _submitForm() {
+    if (_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Feedback berhasil divalidasi dan dikirim oleh ${_nameController.text}!'),
+          backgroundColor: Colors.green.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Periksa kembali input Anda, formulir belum valid!'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -100,151 +71,132 @@ class _Tahap12InteractionPageState extends State<Tahap12InteractionPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'List Page',
+          'Form & Validasi',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.blueAccent,
+        elevation: 0,
       ),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: dashboardFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)),
-              ),
-            );
-          }
-
-          final data = snapshot.data!;
-          final courses = data['courses'] as List<dynamic>;
-
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Card(
-                  elevation: 2,
-                  color: Colors.blue.shade50,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: const Padding(
-                    padding: EdgeInsets.all(14.0),
-                    child: Row(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Card(
+              elevation: 2,
+              color: Colors.blue.shade50,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: const Padding(
+                padding: EdgeInsets.all(14.0),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 26,
+                      backgroundImage: AssetImage('assets/images/Nyengir.jpg'),
+                    ),
+                    SizedBox(width: 14),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
-                          radius: 26,
-                          backgroundImage: AssetImage('assets/images/Nyengir.jpg'),
-                        ),
-                        SizedBox(width: 14),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(studentName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                            Text('NIM: $studentId', style: TextStyle(fontSize: 13)),
-                            Text('Pendidikan Teknik Informatika', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
-                          ],
-                        ),
+                        Text(studentName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        Text('NIM: $studentId', style: TextStyle(fontSize: 13)),
+                        Text('Pendidikan Teknik Informatika', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
                       ],
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Petunjuk Interaksi:',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-                const Text(
-                  '• Tap kartu: Efek Ripple & SnackBar\n• Tap Icon Love: Toggle Favorite State\n• Long Press kartu: Muncul Modal Informasi',
-                  style: TextStyle(fontSize: 12, color: Colors.black87),
-                ),
-                const SizedBox(height: 14),
+              ),
+            ),
 
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: courses.length,
-                    itemBuilder: (context, index) {
-                      final item = courses[index] as Map<String, dynamic>;
-                      final String courseCode = item['code'] as String;
-                      final bool isFav = favoriteCourses.contains(courseCode);
-
-                      return Card(
-                        elevation: 1.5,
-                        margin: const EdgeInsets.only(bottom: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        clipBehavior: Clip.antiAlias, // Memastikan ripple InkWell rapi di dalam sudut card
-                        child: InkWell(
-                          onTap: () {
-                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Tap pada "${item['title']}"'),
-                                duration: const Duration(seconds: 1),
-                              ),
-                            );
-                          },
-                          onLongPress: () {
-                            _showDetailModal(item);
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: Colors.blue.shade50,
-                                  child: const Icon(Icons.menu_book, color: Colors.blueAccent),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item['title'] as String,
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${item['code']} • ${item['credits']} SKS',
-                                        style: const TextStyle(fontSize: 12, color: Colors.blueGrey),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                // ========================================================
-                                // 3. BUTTON TOGGLE FAVORITE DENGAN PERUBAHAN STATE
-                                // ========================================================
-                                IconButton(
-                                  icon: Icon(
-                                    isFav ? Icons.favorite : Icons.favorite_border,
-                                    color: isFav ? Colors.red : Colors.grey,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      if (isFav) {
-                                        favoriteCourses.remove(courseCode);
-                                      } else {
-                                        favoriteCourses.add(courseCode);
-                                      }
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
+            const SizedBox(height: 24),
+            const Text(
+              'Formulir Feedback Pembelajaran',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Silakan lengkapi data dan komentar minimal 5 karakter:',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            
+            const SizedBox(height: 16),
+            Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Nama Mahasiswa',
+                      prefixIcon: Icon(Icons.person),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Nama tidak boleh kosong';
+                      }
+                      return null;
                     },
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _nimController,
+                    decoration: const InputDecoration(
+                      labelText: 'NIM Mahasiswa',
+                      prefixIcon: Icon(Icons.badge),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'NIM tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _commentController,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      labelText: 'Komentar / Masukan',
+                      hintText: 'Tuliskan feedback pembelajaran di sini...',
+                      alignLabelWithHint: true,
+                      prefixIcon: Icon(Icons.comment),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Komentar wajib diisi';
+                      }
+                      if (value.trim().length < 5) {
+                        return 'Komentar harus berisi minimal 5 karakter';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.send),
+                      label: const Text(
+                        'Kirim Feedback',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                      onPressed: _submitForm,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }

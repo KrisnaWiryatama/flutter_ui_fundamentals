@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
-// Identitas Mahasiswa Praktikan
 const String studentName = 'Putu Krisna Wiryatama';
 const String studentId = '2415051099';
 
@@ -16,7 +15,7 @@ class LearningExplorerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Course Explorer - Final',
+      title: 'Learning Dashboard',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
@@ -27,9 +26,6 @@ class LearningExplorerApp extends StatelessWidget {
   }
 }
 
-// =========================================================================
-// 1. ADAPTIVE SHELL (NAVIGATION RAIL & BOTTOM NAVIGATION BAR)
-// =========================================================================
 class MainAdaptiveShell extends StatefulWidget {
   const MainAdaptiveShell({super.key});
 
@@ -106,7 +102,7 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
               return Scaffold(  
                 appBar: AppBar(
                   title: const Text(
-                    'Learning Dashboard • Final Polish',
+                    'Learning Dashboard',
                     style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                   backgroundColor: Colors.blueAccent,
@@ -181,9 +177,6 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
   }
 }
 
-// =========================================================================
-// 2. TAB 1: HOME TAB (WRAP SKILLS & STATS)
-// =========================================================================
 class HomeTab extends StatelessWidget {
   final Map<String, dynamic> student;
   final List<dynamic> courses;
@@ -298,9 +291,6 @@ class HomeTab extends StatelessWidget {
   }
 }
 
-// =========================================================================
-// 3. TAB 2: COURSES TAB (RESPONSIVE GRID, INKWELL, & PASSING/RETURNING DATA)
-// =========================================================================
 class CoursesTab extends StatelessWidget {
   final List<dynamic> courses;
   final Set<String> favoriteCourses;
@@ -481,9 +471,6 @@ class CoursesTab extends StatelessWidget {
   }
 }
 
-// =========================================================================
-// 4. COURSE DETAIL PAGE (MATCHING DESIGN & RETURNING DATA)
-// =========================================================================
 class CourseDetailPage extends StatelessWidget {
   final Map<String, dynamic> course;
 
@@ -613,7 +600,6 @@ class CourseDetailPage extends StatelessWidget {
             ),
             const SizedBox(height: 10),
 
-            // Tombol Kembali
             SizedBox(
               width: double.infinity,
               height: 46,
@@ -635,9 +621,6 @@ class CourseDetailPage extends StatelessWidget {
   }
 }
 
-// =========================================================================
-// 5. TAB 3: PROFILE TAB (FORM VALIDATION, ASYNC LOADING & ALERT DIALOG)
-// =========================================================================
 class ProfileTab extends StatefulWidget {
   final Map<String, dynamic> student;
 

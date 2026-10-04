@@ -209,7 +209,6 @@ class HomeTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Profil Mahasiswa Header
           Card(
             elevation: 2,
             color: Colors.blue.shade50,
@@ -518,7 +517,6 @@ class CourseDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Kartu Ringkasan Course Sesuai Desain Awal
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -578,7 +576,6 @@ class CourseDetailPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Kartu Identitas Praktikan
             Card(
               elevation: 1,
               color: Colors.grey.shade50,
@@ -600,7 +597,6 @@ class CourseDetailPage extends StatelessWidget {
             ),
             const Spacer(),
 
-            // Tombol Favoritkan (Kembali membawa nilai true)
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -665,7 +661,6 @@ class _ProfileTabState extends State<ProfileTab> {
   Future<void> _submitFeedback() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Tampilkan Dialog Konfirmasi
     final bool? confirm = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -730,7 +725,6 @@ class _ProfileTabState extends State<ProfileTab> {
           const Text('NIM: $studentId', style: TextStyle(fontSize: 14, color: Colors.blueGrey)),
           const SizedBox(height: 20),
 
-          // Detail Akademik
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Column(
@@ -751,7 +745,6 @@ class _ProfileTabState extends State<ProfileTab> {
           ),
           const SizedBox(height: 24),
 
-          // Formulir Evaluasi
           Align(
             alignment: Alignment.centerLeft,
             child: Text(

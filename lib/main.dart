@@ -22,22 +22,22 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
         useMaterial3: true,
       ),
-      home: const Tahap8ListPage(),
+      home: const Tahap9ListPage(),
     );
   }
 }
 
 // =========================================================================
-// 1. LIST PAGE (Screen Pengirim Data)
+// 1. LIST PAGE (Screen Pemanggil yang Menunggu Hasil Balikan)
 // =========================================================================
-class Tahap8ListPage extends StatefulWidget {
-  const Tahap8ListPage({super.key});
+class Tahap9ListPage extends StatefulWidget {
+  const Tahap9ListPage({super.key});
 
   @override
-  State<Tahap8ListPage> createState() => _Tahap8ListPageState();
+  State<Tahap9ListPage> createState() => _Tahap9ListPageState();
 }
 
-class _Tahap8ListPageState extends State<Tahap8ListPage> {
+class _Tahap9ListPageState extends State<Tahap9ListPage> {
   late Future<Map<String, dynamic>> dashboardFuture;
 
   @override
@@ -112,7 +112,7 @@ class _Tahap8ListPageState extends State<Tahap8ListPage> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Daftar Materi (Klik Item untuk Melihat Detail):',
+                  'Daftar Materi Pembelajaran:',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
@@ -137,7 +137,7 @@ class _Tahap8ListPageState extends State<Tahap8ListPage> {
                         child: ListTile(
                           leading: CircleAvatar(
                             backgroundColor: statusColor.withOpacity(0.15),
-                            child: Icon(Icons.menu_book, color: statusColor, size: 20),
+                            child: Icon(Icons.school, color: statusColor, size: 20),
                           ),
                           title: Text(
                             item['title'] as String,
@@ -167,15 +167,26 @@ class _Tahap8ListPageState extends State<Tahap8ListPage> {
                             ],
                           ),
                           // ========================================================
-                          // IMPLEMENTASI TAHAP 8: PASSING DATA VIA CONSTRUCTOR
+                          // IMPLEMENTASI TAHAP 9: MENUNGGU DATA KEMBALIAN (AWAIT)
                           // ========================================================
-                          onTap: () {
-                            Navigator.push(
+                          onTap: () async {
+                            final result = await Navigator.push<bool>(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => CourseDetailPage(course: item),
                               ),
                             );
+                            
+                            if (result == true && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Materi "${item['title']}" berhasil ditambahkan ke Favorit!'),
+                                  backgroundColor: Colors.indigo,
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            }
                           },
                         ),
                       );
@@ -192,7 +203,7 @@ class _Tahap8ListPageState extends State<Tahap8ListPage> {
 }
 
 // =========================================================================
-// 2. COURSE DETAIL PAGE (Screen Penerima Data via Constructor)
+// 2. DETAIL PAGE (Screen Pengirim Balikan Data via pop(result))
 // =========================================================================
 class CourseDetailPage extends StatelessWidget {
   final Map<String, dynamic> course;
@@ -204,13 +215,19 @@ class CourseDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Logika penentuan teks dan warna status yang dinamis
     final String status = course['status'] as String;
-    Color statusColor = status == 'done'
-        ? Colors.green
-        : (status == 'active' ? Colors.orange : Colors.grey);
-    String statusText = status == 'done'
-        ? 'Selesai'
-        : (status == 'active' ? 'Sedang Berjalan' : 'Belum Diambil');
+    Color statusColor = Colors.grey;
+    String statusText = 'Belum';
+
+    if (status == 'done') {
+      statusColor = Colors.green;
+      statusText = 'Selesai';
+    } else if (status == 'active') {
+      statusColor = Colors.orange; // Warna oranye/kuning sesuai halaman awal
+      statusText = 'Berjalan';
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -220,69 +237,83 @@ class CourseDetailPage extends StatelessWidget {
         backgroundColor: Colors.blueAccent,
         foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
+      body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Kartu Ringkasan Course dengan Badge Status Dinamis
             Card(
               elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Padding(
-                padding: const EdgeInsets.all(18.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        // Badge Kode Mata Pelajaran (MOB02)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.blueAccent.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(6),
+                            color: Colors.blue.shade100.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             course['code'] as String,
                             style: const TextStyle(
                               color: Colors.blueAccent,
                               fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                              fontSize: 12,
                             ),
                           ),
                         ),
+                        // Badge Status Menyesuaikan Warna Dinamis (Hijau / Oranye / Abu-abu)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(6),
+                            color: statusColor.withOpacity(0.15), // Background warna transparan mengikuti status
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             statusText,
                             style: TextStyle(
-                              color: statusColor,
+                              color: statusColor, // Warna teks mengikuti status
                               fontWeight: FontWeight.bold,
-                              fontSize: 11,
+                              fontSize: 12,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 16),
                     Text(
                       course['title'] as String,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Beban Belajar: ${course['credits']} SKS',
-                      style: const TextStyle(fontSize: 14, color: Colors.black87),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade700,
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+
+            // Kartu Identitas Praktikan
             Card(
               elevation: 1,
               color: Colors.grey.shade50,
@@ -296,25 +327,43 @@ class CourseDetailPage extends StatelessWidget {
                       'Pemeriksa / Praktikan:',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.blueGrey),
                     ),
-                    SizedBox(height: 6),
+                    SizedBox(height: 4),
                     Text('$studentId - $studentName', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 30),
+            ),   
+            const Spacer(),
+
+            // Tombol Favoritkan (Pop dengan nilai true)
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 50,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
+                  backgroundColor: Colors.pinkAccent,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                icon: const Icon(Icons.arrow_back),
-                label: const Text('Kembali ke Daftar Materi'),
-                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.favorite),
+                label: const Text(
+                  'Favoritkan Course Ini',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+                onPressed: () {
+                  Navigator.pop(context, true);
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Tombol Kembali
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Batal / Kembali'),
               ),
             ),
           ],

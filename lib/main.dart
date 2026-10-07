@@ -38,7 +38,8 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
   int _selectedIndex = 0;
   late Future<Map<String, dynamic>> _dashboardFuture;
 
-  // PARENT OWNS STATE: Sumber utama data favorites dipegang oleh parent
+  // 1. SINGLE SOURCE OF TRUTH (LIFTED STATE UP)
+  // State favorit dipusatkan pada ancestor terdekat
   final Set<String> _favoriteCourses = {};
 
   @override
@@ -52,8 +53,9 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
     return jsonDecode(jsonString) as Map<String, dynamic>;
   }
 
-  // CALLBACK: Aksi modifikasi state yang diteruskan ke widget anak
-  void _toggleFavorite(String courseCode) {
+  // 2. CALLBACK UNTUK STATE MUTATION
+  // Fungsi ini diteruskan ke widget anak agar dapat memicu perubahan state di ancestor
+  void _handleFavoriteChanged(String courseCode) {
     setState(() {
       if (_favoriteCourses.contains(courseCode)) {
         _favoriteCourses.remove(courseCode);
@@ -88,17 +90,17 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
         final student = data['student'] as Map<String, dynamic>;
         final courses = data['courses'] as List<dynamic>;
 
-        // PROP DRILLING: Mengoper data favorit dan callback ke child
+        // 3. DISTRIBUSI SINGLE SOURCE OF TRUTH KE DUA CHILD BERBEDA
         final List<Widget> pages = [
           HomeTab(
             student: student,
             courses: courses,
-            favoriteCourses: _favoriteCourses, // Meneruskan daftar favorit ke HomeTab
+            favoriteCourses: _favoriteCourses, // Menerima data tunggal
           ),
           CoursesTab(
             courses: courses,
-            favoriteCourses: _favoriteCourses,
-            onToggleFavorite: _toggleFavorite,
+            favoriteCourses: _favoriteCourses, // Menerima data tunggal yang sama
+            onFavoriteChanged: _handleFavoriteChanged, // Menerima callback
           ),
           ProfileTab(student: student),
         ];
@@ -189,7 +191,7 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
 class HomeTab extends StatelessWidget {
   final Map<String, dynamic> student;
   final List<dynamic> courses;
-  final Set<String> favoriteCourses; // Menerima koleksi favorit
+  final Set<String> favoriteCourses; // Membaca Single Source of Truth
 
   const HomeTab({
     super.key,
@@ -207,7 +209,6 @@ class HomeTab extends StatelessWidget {
     'Async & SnackBar',
   ];
 
-  // Pop-up modal untuk menampilkan daftar mata kuliah favorit
   void _showFavoritesModal(BuildContext context) {
     final List<dynamic> favList = courses
         .where((c) => favoriteCourses.contains(c['code'] as String))
@@ -317,6 +318,7 @@ class HomeTab extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
+
           const Text('Ringkasan Akademik', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
           Row(
@@ -329,7 +331,7 @@ class HomeTab extends StatelessWidget {
               const SizedBox(width: 6),
               _buildStatCard(
                 'Favorit',
-                '${favoriteCourses.length}',
+                '${favoriteCourses.length}', // Konsisten dengan data ancestor
                 Colors.redAccent,
                 Icons.favorite,
                 onTap: () => _showFavoritesModal(context),
@@ -395,13 +397,13 @@ class HomeTab extends StatelessWidget {
 class CoursesTab extends StatelessWidget {
   final List<dynamic> courses;
   final Set<String> favoriteCourses;
-  final Function(String) onToggleFavorite;
+  final Function(String) onFavoriteChanged; // Menerima callback dari ancestor
 
   const CoursesTab({
     super.key,
     required this.courses,
     required this.favoriteCourses,
-    required this.onToggleFavorite,
+    required this.onFavoriteChanged,
   });
 
   void _showCourseDetailModal(BuildContext context, Map<String, dynamic> item) {
@@ -444,7 +446,7 @@ class CoursesTab extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            '• Tap: Detail | Long Press: Modal | Love: Toggle Favorit',
+            '• Tap: Detail | Long Press: Modal | Love: Callback ke Parent',
             style: TextStyle(fontSize: 11, color: Colors.grey),
           ),
           const SizedBox(height: 12),
@@ -456,11 +458,11 @@ class CoursesTab extends StatelessWidget {
                 final String code = item['code'] as String;
                 final bool isFav = favoriteCourses.contains(code);
 
-                return CourseItemCard(
+                return CourseCard(
                   item: item,
-                  isFav: isFav,
-                  onToggleFavorite: () {
-                    onToggleFavorite(code);
+                  isFavorite: isFav,
+                  onFavoriteChanged: () {
+                    onFavoriteChanged(code); // Trigger callback naik ke parent
                     ScaffoldMessenger.of(context).hideCurrentSnackBar();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -488,7 +490,7 @@ class CoursesTab extends StatelessWidget {
                     );
 
                     if (result == true && context.mounted) {
-                      onToggleFavorite(code);
+                      onFavoriteChanged(code);
                       ScaffoldMessenger.of(context).hideCurrentSnackBar();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -514,27 +516,28 @@ class CoursesTab extends StatelessWidget {
   }
 }
 
-class CourseItemCard extends StatefulWidget {
+// Widget anak yang mengonsumsi state via props dan memicu callback
+class CourseCard extends StatefulWidget {
   final Map<String, dynamic> item;
-  final bool isFav;
-  final VoidCallback onToggleFavorite;
+  final bool isFavorite; // Diterima dari ancestor
+  final VoidCallback onFavoriteChanged; // Callback perubahan aksi
   final VoidCallback onLongPress;
   final VoidCallback onTap;
 
-  const CourseItemCard({
+  const CourseCard({
     super.key,
     required this.item,
-    required this.isFav,
-    required this.onToggleFavorite,
+    required this.isFavorite,
+    required this.onFavoriteChanged,
     required this.onLongPress,
     required this.onTap,
   });
 
   @override
-  State<CourseItemCard> createState() => _CourseItemCardState();
+  State<CourseCard> createState() => _CourseCardState();
 }
 
-class _CourseItemCardState extends State<CourseItemCard> {
+class _CourseCardState extends State<CourseCard> {
   bool _showLocalNote = false;
 
   @override
@@ -612,13 +615,14 @@ class _CourseItemCardState extends State<CourseItemCard> {
                       });
                     },
                   ),
+                  // Mengirim sinyal aksi naik ke parent tanpa menyimpan salinan state sendiri
                   IconButton(
                     icon: Icon(
-                      widget.isFav ? Icons.favorite : Icons.favorite_border,
-                      color: widget.isFav ? Colors.red : Colors.grey,
+                      widget.isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: widget.isFavorite ? Colors.red : Colors.grey,
                       size: 20,
                     ),
-                    onPressed: widget.onToggleFavorite,
+                    onPressed: widget.onFavoriteChanged,
                   ),
                 ],
               ),

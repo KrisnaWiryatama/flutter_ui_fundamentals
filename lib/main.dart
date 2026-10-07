@@ -37,6 +37,8 @@ class MainAdaptiveShell extends StatefulWidget {
 class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
   int _selectedIndex = 0;
   late Future<Map<String, dynamic>> _dashboardFuture;
+
+  // PARENT OWNS STATE: Sumber utama data favorites dipegang oleh parent
   final Set<String> _favoriteCourses = {};
 
   @override
@@ -50,6 +52,7 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
     return jsonDecode(jsonString) as Map<String, dynamic>;
   }
 
+  // CALLBACK: Aksi modifikasi state yang diteruskan ke widget anak
   void _toggleFavorite(String courseCode) {
     setState(() {
       if (_favoriteCourses.contains(courseCode)) {
@@ -85,8 +88,13 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
         final student = data['student'] as Map<String, dynamic>;
         final courses = data['courses'] as List<dynamic>;
 
+        // PROP DRILLING: Mengoper data favorit dan callback ke child
         final List<Widget> pages = [
-          HomeTab(student: student, courses: courses),
+          HomeTab(
+            student: student,
+            courses: courses,
+            favoriteCourses: _favoriteCourses, // Meneruskan daftar favorit ke HomeTab
+          ),
           CoursesTab(
             courses: courses,
             favoriteCourses: _favoriteCourses,
@@ -181,8 +189,14 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
 class HomeTab extends StatelessWidget {
   final Map<String, dynamic> student;
   final List<dynamic> courses;
+  final Set<String> favoriteCourses; // Menerima koleksi favorit
 
-  const HomeTab({super.key, required this.student, required this.courses});
+  const HomeTab({
+    super.key,
+    required this.student,
+    required this.courses,
+    required this.favoriteCourses,
+  });
 
   final List<String> skills = const [
     'Flutter UI',
@@ -192,6 +206,75 @@ class HomeTab extends StatelessWidget {
     'Form Validation',
     'Async & SnackBar',
   ];
+
+  // Pop-up modal untuk menampilkan daftar mata kuliah favorit
+  void _showFavoritesModal(BuildContext context) {
+    final List<dynamic> favList = courses
+        .where((c) => favoriteCourses.contains(c['code'] as String))
+        .toList();
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        return Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.favorite, color: Colors.redAccent),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Mata Kuliah Favorit (${favList.length})',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (favList.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(
+                    child: Text(
+                      'Belum ada mata kuliah yang difavoritkan.',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                )
+              else
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: favList.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (ctx, idx) {
+                      final item = favList[idx] as Map<String, dynamic>;
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.red.shade50,
+                          child: const Icon(Icons.school, color: Colors.redAccent, size: 20),
+                        ),
+                        title: Text(
+                          item['title'] as String,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        subtitle: Text('${item['code']} • ${item['credits']} SKS'),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -234,21 +317,28 @@ class HomeTab extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-
           const Text('Ringkasan Akademik', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
           Row(
             children: [
-              _buildStatCard('Total Topik', '${courses.length}', Colors.blueAccent, Icons.topic),
-              const SizedBox(width: 8),
+              _buildStatCard('Topik', '${courses.length}', Colors.blueAccent, Icons.topic),
+              const SizedBox(width: 6),
               _buildStatCard('Selesai', '$doneCount', Colors.green, Icons.task_alt),
-              const SizedBox(width: 8),
-              _buildStatCard('Total SKS', '$totalCredits', Colors.orange, Icons.school),
+              const SizedBox(width: 6),
+              _buildStatCard('SKS', '$totalCredits', Colors.orange, Icons.school),
+              const SizedBox(width: 6),
+              _buildStatCard(
+                'Favorit',
+                '${favoriteCourses.length}',
+                Colors.redAccent,
+                Icons.favorite,
+                onTap: () => _showFavoritesModal(context),
+              ),
             ],
           ),
           const SizedBox(height: 24),
 
-          const Text('Kompetensi Praktikum (Wrap Chips)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const Text('Kompetensi Praktikum', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
@@ -270,21 +360,31 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(String title, String val, Color color, IconData icon) {
+  Widget _buildStatCard(
+    String title,
+    String val,
+    Color color,
+    IconData icon, {
+    VoidCallback? onTap,
+  }) {
     return Expanded(
       child: Card(
         elevation: 1.5,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, size: 18, color: color),
-              const SizedBox(height: 8),
-              Text(val, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-              Text(title, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-            ],
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, size: 18, color: color),
+                const SizedBox(height: 6),
+                Text(val, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+                Text(title, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+              ],
+            ),
           ),
         ),
       ),
@@ -303,12 +403,6 @@ class CoursesTab extends StatelessWidget {
     required this.favoriteCourses,
     required this.onToggleFavorite,
   });
-
-  int _calculateColumns(double width) {
-    if (width < 600) return 1;
-    if (width < 900) return 2;
-    return 3;
-  }
 
   void _showCourseDetailModal(BuildContext context, Map<String, dynamic> item) {
     showModalBottomSheet(
@@ -339,65 +433,83 @@ class CoursesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final int columnCount = _calculateColumns(constraints.maxWidth);
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Daftar Materi Kuliah',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            '• Tap: Detail | Long Press: Modal | Love: Toggle Favorit',
+            style: TextStyle(fontSize: 11, color: Colors.grey),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: ListView.builder(
+              itemCount: courses.length,
+              itemBuilder: (context, index) {
+                final item = courses[index] as Map<String, dynamic>;
+                final String code = item['code'] as String;
+                final bool isFav = favoriteCourses.contains(code);
 
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Daftar Materi Kuliah ($columnCount Kolom)',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                '• Tap: Detail | Long Press: Modal | Info: Toggle Catatan Lokal (setState)',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: courses.length,
-                  itemBuilder: (context, index) {
-                    final item = courses[index] as Map<String, dynamic>;
-                    final String code = item['code'] as String;
-                    final bool isFav = favoriteCourses.contains(code);
-
-                    return CourseItemCard(
-                      item: item,
-                      isFav: isFav,
-                      onToggleFavorite: () => onToggleFavorite(code),
-                      onLongPress: () => _showCourseDetailModal(context, item),
-                      onTap: () async {
-                        final result = await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CourseDetailPage(course: item),
-                          ),
-                        );
-
-                        if (result == true && context.mounted) {
-                          onToggleFavorite(code);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('"${item['title']}" difavoritkan oleh $studentName!'),
-                              backgroundColor: Colors.indigo,
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
-                      },
+                return CourseItemCard(
+                  item: item,
+                  isFav: isFav,
+                  onToggleFavorite: () {
+                    onToggleFavorite(code);
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          !isFav
+                              ? '"${item['title']}" ditambahkan ke favorit!'
+                              : '"${item['title']}" dihapus dari favorit.',
+                        ),
+                        backgroundColor: !isFav ? Colors.indigo : Colors.grey.shade800,
+                        duration: const Duration(seconds: 1),
+                        behavior: SnackBarBehavior.floating,
+                      ),
                     );
                   },
-                ),
-              ),
-            ],
+                  onLongPress: () => _showCourseDetailModal(context, item),
+                  onTap: () async {
+                    final result = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CourseDetailPage(
+                          course: item,
+                          isInitiallyFavorite: isFav,
+                        ),
+                      ),
+                    );
+
+                    if (result == true && context.mounted) {
+                      onToggleFavorite(code);
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            !isFav
+                                ? '"${item['title']}" ditambahkan ke favorit!'
+                                : '"${item['title']}" dihapus dari favorit.',
+                          ),
+                          backgroundColor: !isFav ? Colors.indigo : Colors.grey.shade800,
+                          duration: const Duration(seconds: 1),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                );
+              },
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }
@@ -481,7 +593,6 @@ class _CourseItemCardState extends State<CourseItemCard> {
                     decoration: BoxDecoration(
                       color: statusColor.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: statusColor.withOpacity(0.3)),
                     ),
                     child: Text(
                       statusText,
@@ -497,7 +608,7 @@ class _CourseItemCardState extends State<CourseItemCard> {
                     ),
                     onPressed: () {
                       setState(() {
-                        _showLocalNote = !_showLocalNote; // Memperbarui local state kartu
+                        _showLocalNote = !_showLocalNote;
                       });
                     },
                   ),
@@ -537,8 +648,13 @@ class _CourseItemCardState extends State<CourseItemCard> {
 
 class CourseDetailPage extends StatelessWidget {
   final Map<String, dynamic> course;
+  final bool isInitiallyFavorite;
 
-  const CourseDetailPage({super.key, required this.course});
+  const CourseDetailPage({
+    super.key,
+    required this.course,
+    required this.isInitiallyFavorite,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -653,12 +769,24 @@ class CourseDetailPage extends StatelessWidget {
               height: 50,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.pinkAccent,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  backgroundColor: isInitiallyFavorite ? Colors.red.shade600 : Colors.grey.shade200,
+                  foregroundColor: isInitiallyFavorite ? Colors.white : Colors.black87,
+                  elevation: isInitiallyFavorite ? 2 : 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(
+                      color: isInitiallyFavorite ? Colors.red.shade700 : Colors.grey.shade400,
+                    ),
+                  ),
                 ),
-                icon: const Icon(Icons.favorite),
-                label: const Text('Favoritkan Course Ini', style: TextStyle(fontWeight: FontWeight.bold)),
+                icon: Icon(
+                  isInitiallyFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: isInitiallyFavorite ? Colors.white : Colors.grey.shade700,
+                ),
+                label: Text(
+                  isInitiallyFavorite ? 'Hapus dari Favorit' : 'Tambah ke Favorit',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 onPressed: () => Navigator.pop(context, true),
               ),
             ),

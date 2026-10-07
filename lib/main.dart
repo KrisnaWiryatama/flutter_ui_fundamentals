@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
+// Identitas Wajib Praktikum
 const String studentName = 'Putu Krisna Wiryatama';
 const String studentId = '2415051099';
 
@@ -99,7 +100,7 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
             final bool isWide = constraints.maxWidth >= 840;
 
             if (isWide) {
-              return Scaffold(  
+              return Scaffold(
                 appBar: AppBar(
                   title: const Text(
                     'Learning Dashboard',
@@ -353,112 +354,42 @@ class CoursesTab extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               const Text(
-                '• Tap: Buka Detail | Long Press: Modal Ringkas | Love: Toggle Favorit',
+                '• Tap: Detail | Long Press: Modal | Info: Toggle Catatan Lokal (setState)',
                 style: TextStyle(fontSize: 11, color: Colors.grey),
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: columnCount,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: columnCount == 1 ? 3.4 : (columnCount == 2 ? 2.5 : 2.0),
-                  ),
+                child: ListView.builder(
                   itemCount: courses.length,
                   itemBuilder: (context, index) {
                     final item = courses[index] as Map<String, dynamic>;
                     final String code = item['code'] as String;
                     final bool isFav = favoriteCourses.contains(code);
 
-                    final String status = item['status'] as String;
-                    Color statusColor = Colors.grey;
-                    String statusText = 'Belum';
-                    if (status == 'done') {
-                      statusColor = Colors.green;
-                      statusText = 'Selesai';
-                    } else if (status == 'active') {
-                      statusColor = Colors.orange;
-                      statusText = 'Berjalan';
-                    }
+                    return CourseItemCard(
+                      item: item,
+                      isFav: isFav,
+                      onToggleFavorite: () => onToggleFavorite(code),
+                      onLongPress: () => _showCourseDetailModal(context, item),
+                      onTap: () async {
+                        final result = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CourseDetailPage(course: item),
+                          ),
+                        );
 
-                    return Card(
-                      elevation: 1.5,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () async {
-                          // Navigasi ke DetailPage & menunggu hasil return
-                          final result = await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => CourseDetailPage(course: item),
+                        if (result == true && context.mounted) {
+                          onToggleFavorite(code);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('"${item['title']}" difavoritkan oleh $studentName!'),
+                              backgroundColor: Colors.indigo,
+                              behavior: SnackBarBehavior.floating,
                             ),
                           );
-
-                          if (result == true && context.mounted) {
-                            onToggleFavorite(code);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('"${item['title']}" difavoritkan oleh $studentName!'),
-                                backgroundColor: Colors.indigo,
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
-                        },
-                        onLongPress: () => _showCourseDetailModal(context, item),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundColor: statusColor.withOpacity(0.15),
-                                child: Icon(Icons.school, color: statusColor, size: 20),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      item['title'] as String,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      '${item['code']} • ${item['credits']} SKS',
-                                      style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: statusColor.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  statusText,
-                                  style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 10),
-                                ),
-                              ),
-                              IconButton(
-                                icon: Icon(
-                                  isFav ? Icons.favorite : Icons.favorite_border,
-                                  color: isFav ? Colors.red : Colors.grey,
-                                  size: 20,
-                                ),
-                                onPressed: () => onToggleFavorite(code),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                        }
+                      },
                     );
                   },
                 ),
@@ -467,6 +398,139 @@ class CoursesTab extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class CourseItemCard extends StatefulWidget {
+  final Map<String, dynamic> item;
+  final bool isFav;
+  final VoidCallback onToggleFavorite;
+  final VoidCallback onLongPress;
+  final VoidCallback onTap;
+
+  const CourseItemCard({
+    super.key,
+    required this.item,
+    required this.isFav,
+    required this.onToggleFavorite,
+    required this.onLongPress,
+    required this.onTap,
+  });
+
+  @override
+  State<CourseItemCard> createState() => _CourseItemCardState();
+}
+
+class _CourseItemCardState extends State<CourseItemCard> {
+  bool _showLocalNote = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final String status = widget.item['status'] as String;
+    Color statusColor = Colors.grey;
+    String statusText = 'Belum';
+    if (status == 'done') {
+      statusColor = Colors.green;
+      statusText = 'Selesai';
+    } else if (status == 'active') {
+      statusColor = Colors.orange;
+      statusText = 'Berjalan';
+    }
+
+    return Card(
+      elevation: 1.5,
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: statusColor.withOpacity(0.15),
+                    child: Icon(Icons.school, color: statusColor, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.item['title'] as String,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '${widget.item['code']} • ${widget.item['credits']} SKS',
+                          style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: statusColor.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      statusText,
+                      style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 10),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Toggle Catatan Lokal',
+                    icon: Icon(
+                      _showLocalNote ? Icons.info : Icons.info_outline,
+                      color: Colors.blueAccent,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _showLocalNote = !_showLocalNote; // Memperbarui local state kartu
+                      });
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      widget.isFav ? Icons.favorite : Icons.favorite_border,
+                      color: widget.isFav ? Colors.red : Colors.grey,
+                      size: 20,
+                    ),
+                    onPressed: widget.onToggleFavorite,
+                  ),
+                ],
+              ),
+              if (_showLocalNote) ...[
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade100),
+                  ),
+                  child: Text(
+                    'Catatan Lokal: Materi "${widget.item['title']}" sedang diperiksa (State lokal via setState).',
+                    style: TextStyle(fontSize: 11, color: Colors.blue.shade900),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -676,7 +740,7 @@ class _ProfileTabState extends State<ProfileTab> {
     if (confirm != true) return;
 
     setState(() => _isProcessing = true);
-    await Future.delayed(const Duration(seconds: 2)); // Simulasi async
+    await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
     setState(() => _isProcessing = false);
@@ -726,7 +790,7 @@ class _ProfileTabState extends State<ProfileTab> {
               ],
             ),
           ),
-          const SizedBox(height: 24), // formulir evaluasi
+          const SizedBox(height: 24),
 
           Align(
             alignment: Alignment.centerLeft,

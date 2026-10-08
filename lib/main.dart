@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'course_state.dart'; // Import ChangeNotifier Tahap 5
 
 // Identitas Wajib Praktikum
 const String studentName = 'Putu Krisna Wiryatama';
@@ -38,40 +39,31 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
   int _selectedIndex = 0;
   late Future<Map<String, dynamic>> _dashboardFuture;
 
-  // Koleksi mata kuliah favorit
-  final Set<String> _favoriteCourses = {};
-
-  // TAHAP 4: Deklarasi ValueNotifier<int> untuk nilai sederhana jumlah favorit
-  final ValueNotifier<int> _favoriteCountNotifier = ValueNotifier<int>(0);
+  // Inisialisasi Objek ChangeNotifier Tahap 5
+  final CourseState _courseState = CourseState();
 
   @override
   void initState() {
     super.initState();
     _dashboardFuture = _loadStudentData();
+    // Mendaftarkan listener agar antarmuka di-rebuild saat notifyListeners() dipanggil
+    _courseState.addListener(_rebuildUI);
   }
 
   @override
   void dispose() {
-    // Praktik terbaik: dispose ValueNotifier ketika widget dihancurkan
-    _favoriteCountNotifier.dispose();
+    _courseState.removeListener(_rebuildUI);
+    _courseState.dispose();
     super.dispose();
+  }
+
+  void _rebuildUI() {
+    setState(() {});
   }
 
   Future<Map<String, dynamic>> _loadStudentData() async {
     final jsonString = await rootBundle.loadString('assets/data/student_data.json');
     return jsonDecode(jsonString) as Map<String, dynamic>;
-  }
-
-  void _handleFavoriteChanged(String courseCode) {
-    setState(() {
-      if (_favoriteCourses.contains(courseCode)) {
-        _favoriteCourses.remove(courseCode);
-      } else {
-        _favoriteCourses.add(courseCode);
-      }
-      // Memperbarui nilai ValueNotifier
-      _favoriteCountNotifier.value = _favoriteCourses.length;
-    });
   }
 
   @override
@@ -103,13 +95,11 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
           HomeTab(
             student: student,
             courses: courses,
-            favoriteCourses: _favoriteCourses,
-            favoriteCountNotifier: _favoriteCountNotifier, // Kirim ValueNotifier ke Child
+            courseState: _courseState,
           ),
           CoursesTab(
             courses: courses,
-            favoriteCourses: _favoriteCourses,
-            onFavoriteChanged: _handleFavoriteChanged,
+            courseState: _courseState,
           ),
           ProfileTab(student: student),
         ];
@@ -200,15 +190,13 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
 class HomeTab extends StatelessWidget {
   final Map<String, dynamic> student;
   final List<dynamic> courses;
-  final Set<String> favoriteCourses;
-  final ValueNotifier<int> favoriteCountNotifier; // TAHAP 4: Menerima ValueNotifier
+  final CourseState courseState;
 
   const HomeTab({
     super.key,
     required this.student,
     required this.courses,
-    required this.favoriteCourses,
-    required this.favoriteCountNotifier,
+    required this.courseState,
   });
 
   final List<String> skills = const [
@@ -222,7 +210,7 @@ class HomeTab extends StatelessWidget {
 
   void _showFavoritesModal(BuildContext context) {
     final List<dynamic> favList = courses
-        .where((c) => favoriteCourses.contains(c['code'] as String))
+        .where((c) => courseState.isFavorite(c['code'] as String))
         .toList();
 
     showModalBottomSheet(
@@ -340,77 +328,29 @@ class HomeTab extends StatelessWidget {
               const SizedBox(width: 6),
               _buildStatCard('SKS', '$totalCredits', Colors.orange, Icons.school),
               const SizedBox(width: 6),
-
-              // TAHAP 4: Tampilkan nilai dengan ValueListenableBuilder & Tambahkan Button Pengubah Value
               Expanded(
-                child: ValueListenableBuilder<int>(
-                  valueListenable: favoriteCountNotifier,
-                  builder: (context, val, child) {
-                    return Card(
-                      elevation: 1.5,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () => _showFavoritesModal(context),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Icon(Icons.favorite, size: 16, color: Colors.redAccent),
-                                  // Tombol Aksi Pengubah ValueNotifier (Tahap 4)
-                                  Row(
-                                    children: [
-                                      InkWell(
-                                        onTap: () {
-                                          if (favoriteCountNotifier.value > 0) {
-                                            favoriteCountNotifier.value--; // Ubah value (-1)
-                                          }
-                                        },
-                                        borderRadius: BorderRadius.circular(4),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.shade200,
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: const Text('-', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 3),
-                                      InkWell(
-                                        onTap: () {
-                                          favoriteCountNotifier.value++; // Ubah value (+1)
-                                        },
-                                        borderRadius: BorderRadius.circular(4),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red.shade100,
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: const Text('+', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.redAccent)),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '$val', // Menampilkan nilai terkini dari ValueNotifier
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent),
-                              ),
-                              const Text('Favorit', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                            ],
+                child: Card(
+                  elevation: 1.5,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () => _showFavoritesModal(context),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.favorite, size: 18, color: Colors.redAccent),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${courseState.favoriteCount}', // Membaca data CourseState
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent),
                           ),
-                        ),
+                          const Text('Favorit', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                        ],
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -463,14 +403,12 @@ class HomeTab extends StatelessWidget {
 
 class CoursesTab extends StatelessWidget {
   final List<dynamic> courses;
-  final Set<String> favoriteCourses;
-  final Function(String) onFavoriteChanged;
+  final CourseState courseState;
 
   const CoursesTab({
     super.key,
     required this.courses,
-    required this.favoriteCourses,
-    required this.onFavoriteChanged,
+    required this.courseState,
   });
 
   void _showCourseDetailModal(BuildContext context, Map<String, dynamic> item) {
@@ -513,7 +451,7 @@ class CoursesTab extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            '• Tap: Detail | Long Press: Modal | Love: Callback ke Parent',
+            '• Tap: Detail | Long Press: Modal | Love: toggleFavorite() via ChangeNotifier',
             style: TextStyle(fontSize: 11, color: Colors.grey),
           ),
           const SizedBox(height: 12),
@@ -523,13 +461,14 @@ class CoursesTab extends StatelessWidget {
               itemBuilder: (context, index) {
                 final item = courses[index] as Map<String, dynamic>;
                 final String code = item['code'] as String;
-                final bool isFav = favoriteCourses.contains(code);
+                final bool isFav = courseState.isFavorite(code);
 
                 return CourseCard(
                   item: item,
                   isFavorite: isFav,
                   onFavoriteChanged: () {
-                    onFavoriteChanged(code);
+                    // Eksekusi toggleFavorite di ChangeNotifier
+                    courseState.toggleFavorite(code);
                     ScaffoldMessenger.of(context).hideCurrentSnackBar();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -557,7 +496,7 @@ class CoursesTab extends StatelessWidget {
                     );
 
                     if (result == true && context.mounted) {
-                      onFavoriteChanged(code);
+                      courseState.toggleFavorite(code);
                       ScaffoldMessenger.of(context).hideCurrentSnackBar();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(

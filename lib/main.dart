@@ -1,14 +1,23 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'course_state.dart'; // Import ChangeNotifier Tahap 5
+import 'package:provider/provider.dart'; // Import package provider
+import 'course_state.dart';
 
 // Identitas Wajib Praktikum
 const String studentName = 'Putu Krisna Wiryatama';
 const String studentId = '2415051099';
 
+// ==========================================
+// TAHAP 6: MEMBUNGKUS APLIKASI DENGAN CHANGENOTIFIERPROVIDER
+// ==========================================
 void main() {
-  runApp(const LearningExplorerApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => CourseState(), // Menyediakan objek ChangeNotifier ke seluruh widget tree
+      child: const LearningExplorerApp(),
+    ),
+  );
 }
 
 class LearningExplorerApp extends StatelessWidget {
@@ -39,26 +48,10 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
   int _selectedIndex = 0;
   late Future<Map<String, dynamic>> _dashboardFuture;
 
-  // Inisialisasi Objek ChangeNotifier Tahap 5
-  final CourseState _courseState = CourseState();
-
   @override
   void initState() {
     super.initState();
     _dashboardFuture = _loadStudentData();
-    // Mendaftarkan listener agar antarmuka di-rebuild saat notifyListeners() dipanggil
-    _courseState.addListener(_rebuildUI);
-  }
-
-  @override
-  void dispose() {
-    _courseState.removeListener(_rebuildUI);
-    _courseState.dispose();
-    super.dispose();
-  }
-
-  void _rebuildUI() {
-    setState(() {});
   }
 
   Future<Map<String, dynamic>> _loadStudentData() async {
@@ -91,16 +84,10 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
         final student = data['student'] as Map<String, dynamic>;
         final courses = data['courses'] as List<dynamic>;
 
+        // CourseState tidak perlu lagi dioper lewat constructor shell
         final List<Widget> pages = [
-          HomeTab(
-            student: student,
-            courses: courses,
-            courseState: _courseState,
-          ),
-          CoursesTab(
-            courses: courses,
-            courseState: _courseState,
-          ),
+          HomeTab(student: student, courses: courses),
+          CoursesTab(courses: courses),
           ProfileTab(student: student),
         ];
 
@@ -190,13 +177,11 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
 class HomeTab extends StatelessWidget {
   final Map<String, dynamic> student;
   final List<dynamic> courses;
-  final CourseState courseState;
 
   const HomeTab({
     super.key,
     required this.student,
     required this.courses,
-    required this.courseState,
   });
 
   final List<String> skills = const [
@@ -209,6 +194,8 @@ class HomeTab extends StatelessWidget {
   ];
 
   void _showFavoritesModal(BuildContext context) {
+    // Mengakses state dari Provider melalui BuildContext
+    final courseState = Provider.of<CourseState>(context, listen: false);
     final List<dynamic> favList = courses
         .where((c) => courseState.isFavorite(c['code'] as String))
         .toList();
@@ -281,6 +268,9 @@ class HomeTab extends StatelessWidget {
     final int doneCount = courses.where((c) => c['status'] == 'done').length;
     final int totalCredits = courses.fold(0, (sum, c) => sum + (c['credits'] as int));
 
+    // Mengambil state CourseState dari Provider yang terpasang di atas widget tree
+    final courseState = Provider.of<CourseState>(context);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -343,7 +333,7 @@ class HomeTab extends StatelessWidget {
                           const Icon(Icons.favorite, size: 18, color: Colors.redAccent),
                           const SizedBox(height: 6),
                           Text(
-                            '${courseState.favoriteCount}', // Membaca data CourseState
+                            '${courseState.favoriteCount}', // Diambil dari Provider
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent),
                           ),
                           const Text('Favorit', style: TextStyle(fontSize: 10, color: Colors.grey)),
@@ -403,12 +393,10 @@ class HomeTab extends StatelessWidget {
 
 class CoursesTab extends StatelessWidget {
   final List<dynamic> courses;
-  final CourseState courseState;
 
   const CoursesTab({
     super.key,
     required this.courses,
-    required this.courseState,
   });
 
   void _showCourseDetailModal(BuildContext context, Map<String, dynamic> item) {
@@ -440,6 +428,8 @@ class CoursesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final courseState = Provider.of<CourseState>(context);
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -451,7 +441,7 @@ class CoursesTab extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            '• Tap: Detail | Long Press: Modal | Love: toggleFavorite() via ChangeNotifier',
+            '• Provider terpasang di root tree | State diakses via Provider.of',
             style: TextStyle(fontSize: 11, color: Colors.grey),
           ),
           const SizedBox(height: 12),
@@ -467,7 +457,6 @@ class CoursesTab extends StatelessWidget {
                   item: item,
                   isFavorite: isFav,
                   onFavoriteChanged: () {
-                    // Eksekusi toggleFavorite di ChangeNotifier
                     courseState.toggleFavorite(code);
                     ScaffoldMessenger.of(context).hideCurrentSnackBar();
                     ScaffoldMessenger.of(context).showSnackBar(

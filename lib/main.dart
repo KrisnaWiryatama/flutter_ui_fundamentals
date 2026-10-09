@@ -1,20 +1,17 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:provider/provider.dart'; // Import package provider
+import 'package:provider/provider.dart';
 import 'course_state.dart';
 
 // Identitas Wajib Praktikum
 const String studentName = 'Putu Krisna Wiryatama';
 const String studentId = '2415051099';
 
-// ==========================================
-// TAHAP 6: MEMBUNGKUS APLIKASI DENGAN CHANGENOTIFIERPROVIDER
-// ==========================================
 void main() {
   runApp(
     ChangeNotifierProvider(
-      create: (_) => CourseState(), // Menyediakan objek ChangeNotifier ke seluruh widget tree
+      create: (_) => CourseState(),
       child: const LearningExplorerApp(),
     ),
   );
@@ -84,7 +81,6 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
         final student = data['student'] as Map<String, dynamic>;
         final courses = data['courses'] as List<dynamic>;
 
-        // CourseState tidak perlu lagi dioper lewat constructor shell
         final List<Widget> pages = [
           HomeTab(student: student, courses: courses),
           CoursesTab(courses: courses),
@@ -194,8 +190,8 @@ class HomeTab extends StatelessWidget {
   ];
 
   void _showFavoritesModal(BuildContext context) {
-    // Mengakses state dari Provider melalui BuildContext
-    final courseState = Provider.of<CourseState>(context, listen: false);
+    // Membaca state satu kali tanpa listen saat memunculkan modal
+    final courseState = context.read<CourseState>();
     final List<dynamic> favList = courses
         .where((c) => courseState.isFavorite(c['code'] as String))
         .toList();
@@ -268,8 +264,8 @@ class HomeTab extends StatelessWidget {
     final int doneCount = courses.where((c) => c['status'] == 'done').length;
     final int totalCredits = courses.fold(0, (sum, c) => sum + (c['credits'] as int));
 
-    // Mengambil state CourseState dari Provider yang terpasang di atas widget tree
-    final courseState = Provider.of<CourseState>(context);
+    // POIN 1 TAHAP 7: Menggunakan context.watch() untuk mendengarkan perubahan data
+    final courseState = context.watch<CourseState>();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -318,6 +314,8 @@ class HomeTab extends StatelessWidget {
               const SizedBox(width: 6),
               _buildStatCard('SKS', '$totalCredits', Colors.orange, Icons.school),
               const SizedBox(width: 6),
+
+              // Menampilkan nilai favoriteCount langsung dari variabel courseState (context.watch)
               Expanded(
                 child: Card(
                   elevation: 1.5,
@@ -333,7 +331,7 @@ class HomeTab extends StatelessWidget {
                           const Icon(Icons.favorite, size: 18, color: Colors.redAccent),
                           const SizedBox(height: 6),
                           Text(
-                            '${courseState.favoriteCount}', // Diambil dari Provider
+                            '${courseState.favoriteCount}', // Terhubung langsung ke context.watch
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent),
                           ),
                           const Text('Favorit', style: TextStyle(fontSize: 10, color: Colors.grey)),
@@ -428,8 +426,6 @@ class CoursesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final courseState = Provider.of<CourseState>(context);
-
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -441,7 +437,7 @@ class CoursesTab extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            '• Provider terpasang di root tree | State diakses via Provider.of',
+            '• Tap: Detail | Long Press: Modal | Love: context.read() Toggle',
             style: TextStyle(fontSize: 11, color: Colors.grey),
           ),
           const SizedBox(height: 12),
@@ -450,30 +446,13 @@ class CoursesTab extends StatelessWidget {
               itemCount: courses.length,
               itemBuilder: (context, index) {
                 final item = courses[index] as Map<String, dynamic>;
-                final String code = item['code'] as String;
-                final bool isFav = courseState.isFavorite(code);
-
                 return CourseCard(
                   item: item,
-                  isFavorite: isFav,
-                  onFavoriteChanged: () {
-                    courseState.toggleFavorite(code);
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          !isFav
-                              ? '"${item['title']}" ditambahkan ke favorit!'
-                              : '"${item['title']}" dihapus dari favorit.',
-                        ),
-                        backgroundColor: !isFav ? Colors.indigo : Colors.grey.shade800,
-                        duration: const Duration(seconds: 1),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
                   onLongPress: () => _showCourseDetailModal(context, item),
                   onTap: () async {
+                    final code = item['code'] as String;
+                    final isFav = context.read<CourseState>().isFavorite(code);
+
                     final result = await Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
@@ -484,8 +463,9 @@ class CoursesTab extends StatelessWidget {
                       ),
                     );
 
+                    // POIN 2 TAHAP 7: Eksekusi aksi mutasi via context.read()
                     if (result == true && context.mounted) {
-                      courseState.toggleFavorite(code);
+                      context.read<CourseState>().toggleFavorite(code);
                       ScaffoldMessenger.of(context).hideCurrentSnackBar();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -513,16 +493,12 @@ class CoursesTab extends StatelessWidget {
 
 class CourseCard extends StatefulWidget {
   final Map<String, dynamic> item;
-  final bool isFavorite;
-  final VoidCallback onFavoriteChanged;
   final VoidCallback onLongPress;
   final VoidCallback onTap;
 
   const CourseCard({
     super.key,
     required this.item,
-    required this.isFavorite,
-    required this.onFavoriteChanged,
     required this.onLongPress,
     required this.onTap,
   });
@@ -536,7 +512,9 @@ class _CourseCardState extends State<CourseCard> {
 
   @override
   Widget build(BuildContext context) {
-    final String status = widget.item['status'] as String;
+    final String status = widget.item['item_status'] ?? widget.item['status'] as String;
+    final String code = widget.item['code'] as String;
+
     Color statusColor = Colors.grey;
     String statusText = 'Belum';
     if (status == 'done') {
@@ -609,13 +587,36 @@ class _CourseCardState extends State<CourseCard> {
                       });
                     },
                   ),
-                  IconButton(
-                    icon: Icon(
-                      widget.isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: widget.isFavorite ? Colors.red : Colors.grey,
-                      size: 20,
-                    ),
-                    onPressed: widget.onFavoriteChanged,
+
+                  // POIN 3 TAHAP 7: Consumer membatasi rebuild hanya pada tombol ikon favorit
+                  Consumer<CourseState>(
+                    builder: (context, state, child) {
+                      final bool isFav = state.isFavorite(code);
+                      return IconButton(
+                        icon: Icon(
+                          isFav ? Icons.favorite : Icons.favorite_border,
+                          color: isFav ? Colors.red : Colors.grey,
+                          size: 20,
+                        ),
+                        // POIN 2 TAHAP 7: context.read() digunakan dalam event klik
+                        onPressed: () {
+                          context.read<CourseState>().toggleFavorite(code);
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                !isFav
+                                    ? '"${widget.item['title']}" ditambahkan ke favorit!'
+                                    : '"${widget.item['title']}" dihapus dari favorit.',
+                              ),
+                              backgroundColor: !isFav ? Colors.indigo : Colors.grey.shade800,
+                              duration: const Duration(seconds: 1),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ],
               ),
@@ -656,6 +657,8 @@ class CourseDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String status = course['status'] as String;
+    final String code = course['code'] as String;
+
     Color statusColor = Colors.grey;
     String statusText = 'Belum';
 
@@ -666,6 +669,8 @@ class CourseDetailPage extends StatelessWidget {
       statusColor = Colors.orange;
       statusText = 'Berjalan';
     }
+
+    final isFav = context.watch<CourseState>().isFavorite(code);
 
     return Scaffold(
       appBar: AppBar(
@@ -761,30 +766,33 @@ class CourseDetailPage extends StatelessWidget {
             ),
             const Spacer(),
 
+            // Memanggil aksi mutasi state via context.read()
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isInitiallyFavorite ? Colors.red.shade600 : Colors.grey.shade200,
-                  foregroundColor: isInitiallyFavorite ? Colors.white : Colors.black87,
-                  elevation: isInitiallyFavorite ? 2 : 0,
+                  backgroundColor: isFav ? Colors.red.shade600 : Colors.grey.shade200,
+                  foregroundColor: isFav ? Colors.white : Colors.black87,
+                  elevation: isFav ? 2 : 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                     side: BorderSide(
-                      color: isInitiallyFavorite ? Colors.red.shade700 : Colors.grey.shade400,
+                      color: isFav ? Colors.red.shade700 : Colors.grey.shade400,
                     ),
                   ),
                 ),
                 icon: Icon(
-                  isInitiallyFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: isInitiallyFavorite ? Colors.white : Colors.grey.shade700,
+                  isFav ? Icons.favorite : Icons.favorite_border,
+                  color: isFav ? Colors.white : Colors.grey.shade700,
                 ),
                 label: Text(
-                  isInitiallyFavorite ? 'Hapus dari Favorit' : 'Tambah ke Favorit',
+                  isFav ? 'Hapus dari Favorit' : 'Tambah ke Favorit',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () {
+                  context.read<CourseState>().toggleFavorite(code);
+                },
               ),
             ),
             const SizedBox(height: 10),

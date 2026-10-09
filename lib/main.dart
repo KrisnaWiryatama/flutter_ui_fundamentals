@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:provider/provider.dart';
 import 'course_state.dart';
+import 'models/course.dart'; // Import model Course Tahap 8
 
 // Identitas Wajib Praktikum
 const String studentName = 'Putu Krisna Wiryatama';
@@ -79,7 +80,12 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
 
         final data = snapshot.data!;
         final student = data['student'] as Map<String, dynamic>;
-        final courses = data['courses'] as List<dynamic>;
+        final rawCourses = data['courses'] as List<dynamic>;
+
+        // TAHAP 8: Parsing List JSON mentah menjadi List<Course> object model
+        final List<Course> courses = rawCourses
+            .map((c) => Course.fromJson(c as Map<String, dynamic>))
+            .toList();
 
         final List<Widget> pages = [
           HomeTab(student: student, courses: courses),
@@ -172,7 +178,7 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
 
 class HomeTab extends StatelessWidget {
   final Map<String, dynamic> student;
-  final List<dynamic> courses;
+  final List<Course> courses; // Menggunakan List<Course>
 
   const HomeTab({
     super.key,
@@ -190,10 +196,9 @@ class HomeTab extends StatelessWidget {
   ];
 
   void _showFavoritesModal(BuildContext context) {
-    // Membaca state satu kali tanpa listen saat memunculkan modal
     final courseState = context.read<CourseState>();
-    final List<dynamic> favList = courses
-        .where((c) => courseState.isFavorite(c['code'] as String))
+    final List<Course> favList = courses
+        .where((c) => courseState.isFavorite(c.code))
         .toList();
 
     showModalBottomSheet(
@@ -236,7 +241,7 @@ class HomeTab extends StatelessWidget {
                     itemCount: favList.length,
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (ctx, idx) {
-                      final item = favList[idx] as Map<String, dynamic>;
+                      final item = favList[idx];
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: CircleAvatar(
@@ -244,10 +249,10 @@ class HomeTab extends StatelessWidget {
                           child: const Icon(Icons.school, color: Colors.redAccent, size: 20),
                         ),
                         title: Text(
-                          item['title'] as String,
+                          item.title,
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
-                        subtitle: Text('${item['code']} • ${item['credits']} SKS'),
+                        subtitle: Text('${item.code} • ${item.credits} SKS'),
                       );
                     },
                   ),
@@ -261,10 +266,10 @@ class HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int doneCount = courses.where((c) => c['status'] == 'done').length;
-    final int totalCredits = courses.fold(0, (sum, c) => sum + (c['credits'] as int));
+    // Mengakses properti model Course langsung
+    final int doneCount = courses.where((c) => c.status == 'done').length;
+    final int totalCredits = courses.fold(0, (sum, c) => sum + c.credits);
 
-    // POIN 1 TAHAP 7: Menggunakan context.watch() untuk mendengarkan perubahan data
     final courseState = context.watch<CourseState>();
 
     return SingleChildScrollView(
@@ -314,8 +319,6 @@ class HomeTab extends StatelessWidget {
               const SizedBox(width: 6),
               _buildStatCard('SKS', '$totalCredits', Colors.orange, Icons.school),
               const SizedBox(width: 6),
-
-              // Menampilkan nilai favoriteCount langsung dari variabel courseState (context.watch)
               Expanded(
                 child: Card(
                   elevation: 1.5,
@@ -331,7 +334,7 @@ class HomeTab extends StatelessWidget {
                           const Icon(Icons.favorite, size: 18, color: Colors.redAccent),
                           const SizedBox(height: 6),
                           Text(
-                            '${courseState.favoriteCount}', // Terhubung langsung ke context.watch
+                            '${courseState.favoriteCount}',
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent),
                           ),
                           const Text('Favorit', style: TextStyle(fontSize: 10, color: Colors.grey)),
@@ -390,14 +393,14 @@ class HomeTab extends StatelessWidget {
 }
 
 class CoursesTab extends StatelessWidget {
-  final List<dynamic> courses;
+  final List<Course> courses; // Menerima List<Course>
 
   const CoursesTab({
     super.key,
     required this.courses,
   });
 
-  void _showCourseDetailModal(BuildContext context, Map<String, dynamic> item) {
+  void _showCourseDetailModal(BuildContext context, Course item) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -410,11 +413,11 @@ class CoursesTab extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(item['code'] as String, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent)),
+              Text(item.code, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent)),
               const SizedBox(height: 6),
-              Text(item['title'] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(item.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text('Beban SKS: ${item['credits']} SKS | Status: ${item['status']}', style: const TextStyle(color: Colors.grey)),
+              Text('Beban SKS: ${item.credits} SKS | Status: ${item.status}', style: const TextStyle(color: Colors.grey)),
               const SizedBox(height: 12),
               const Text('Info singkat dibuka via Long Press gesture pada kartu materi.'),
             ],
@@ -437,7 +440,7 @@ class CoursesTab extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            '• Tap: Detail | Long Press: Modal | Love: context.read() Toggle',
+            '• Tap: Detail | Long Press: Modal | Love: Toggle via Model Course',
             style: TextStyle(fontSize: 11, color: Colors.grey),
           ),
           const SizedBox(height: 12),
@@ -445,13 +448,12 @@ class CoursesTab extends StatelessWidget {
             child: ListView.builder(
               itemCount: courses.length,
               itemBuilder: (context, index) {
-                final item = courses[index] as Map<String, dynamic>;
+                final Course item = courses[index];
                 return CourseCard(
                   item: item,
                   onLongPress: () => _showCourseDetailModal(context, item),
                   onTap: () async {
-                    final code = item['code'] as String;
-                    final isFav = context.read<CourseState>().isFavorite(code);
+                    final isFav = context.read<CourseState>().isFavorite(item.code);
 
                     final result = await Navigator.push<bool>(
                       context,
@@ -463,16 +465,15 @@ class CoursesTab extends StatelessWidget {
                       ),
                     );
 
-                    // POIN 2 TAHAP 7: Eksekusi aksi mutasi via context.read()
                     if (result == true && context.mounted) {
-                      context.read<CourseState>().toggleFavorite(code);
+                      context.read<CourseState>().toggleFavorite(item.code);
                       ScaffoldMessenger.of(context).hideCurrentSnackBar();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
                             !isFav
-                                ? '"${item['title']}" ditambahkan ke favorit!'
-                                : '"${item['title']}" dihapus dari favorit.',
+                                ? '"${item.title}" ditambahkan ke favorit!'
+                                : '"${item.title}" dihapus dari favorit.',
                           ),
                           backgroundColor: !isFav ? Colors.indigo : Colors.grey.shade800,
                           duration: const Duration(seconds: 1),
@@ -492,7 +493,7 @@ class CoursesTab extends StatelessWidget {
 }
 
 class CourseCard extends StatefulWidget {
-  final Map<String, dynamic> item;
+  final Course item; // Menggunakan tipe data Course
   final VoidCallback onLongPress;
   final VoidCallback onTap;
 
@@ -512,15 +513,12 @@ class _CourseCardState extends State<CourseCard> {
 
   @override
   Widget build(BuildContext context) {
-    final String status = widget.item['item_status'] ?? widget.item['status'] as String;
-    final String code = widget.item['code'] as String;
-
     Color statusColor = Colors.grey;
     String statusText = 'Belum';
-    if (status == 'done') {
+    if (widget.item.status == 'done') {
       statusColor = Colors.green;
       statusText = 'Selesai';
-    } else if (status == 'active') {
+    } else if (widget.item.status == 'active') {
       statusColor = Colors.orange;
       statusText = 'Berjalan';
     }
@@ -550,14 +548,14 @@ class _CourseCardState extends State<CourseCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.item['title'] as String,
+                          widget.item.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          '${widget.item['code']} • ${widget.item['credits']} SKS',
+                          '${widget.item.code} • ${widget.item.credits} SKS',
                           style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
                         ),
                       ],
@@ -587,27 +585,24 @@ class _CourseCardState extends State<CourseCard> {
                       });
                     },
                   ),
-
-                  // POIN 3 TAHAP 7: Consumer membatasi rebuild hanya pada tombol ikon favorit
                   Consumer<CourseState>(
                     builder: (context, state, child) {
-                      final bool isFav = state.isFavorite(code);
+                      final bool isFav = state.isFavorite(widget.item.code);
                       return IconButton(
                         icon: Icon(
                           isFav ? Icons.favorite : Icons.favorite_border,
                           color: isFav ? Colors.red : Colors.grey,
                           size: 20,
                         ),
-                        // POIN 2 TAHAP 7: context.read() digunakan dalam event klik
                         onPressed: () {
-                          context.read<CourseState>().toggleFavorite(code);
+                          context.read<CourseState>().toggleFavorite(widget.item.code);
                           ScaffoldMessenger.of(context).hideCurrentSnackBar();
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
                                 !isFav
-                                    ? '"${widget.item['title']}" ditambahkan ke favorit!'
-                                    : '"${widget.item['title']}" dihapus dari favorit.',
+                                    ? '"${widget.item.title}" ditambahkan ke favorit!'
+                                    : '"${widget.item.title}" dihapus dari favorit.',
                               ),
                               backgroundColor: !isFav ? Colors.indigo : Colors.grey.shade800,
                               duration: const Duration(seconds: 1),
@@ -631,7 +626,7 @@ class _CourseCardState extends State<CourseCard> {
                     border: Border.all(color: Colors.blue.shade100),
                   ),
                   child: Text(
-                    'Catatan Lokal: Materi "${widget.item['title']}" sedang diperiksa (State lokal via setState).',
+                    'Catatan Lokal: Materi "${widget.item.title}" sedang diperiksa (State lokal via setState).',
                     style: TextStyle(fontSize: 11, color: Colors.blue.shade900),
                   ),
                 ),
@@ -645,7 +640,7 @@ class _CourseCardState extends State<CourseCard> {
 }
 
 class CourseDetailPage extends StatelessWidget {
-  final Map<String, dynamic> course;
+  final Course course; // Menggunakan objek model Course
   final bool isInitiallyFavorite;
 
   const CourseDetailPage({
@@ -656,26 +651,23 @@ class CourseDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String status = course['status'] as String;
-    final String code = course['code'] as String;
-
     Color statusColor = Colors.grey;
     String statusText = 'Belum';
 
-    if (status == 'done') {
+    if (course.status == 'done') {
       statusColor = Colors.green;
       statusText = 'Selesai';
-    } else if (status == 'active') {
+    } else if (course.status == 'active') {
       statusColor = Colors.orange;
       statusText = 'Berjalan';
     }
 
-    final isFav = context.watch<CourseState>().isFavorite(code);
+    final isFav = context.watch<CourseState>().isFavorite(course.code);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          course['title'] as String,
+          course.title,
           style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.blueAccent,
@@ -704,7 +696,7 @@ class CourseDetailPage extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            course['code'] as String,
+                            course.code,
                             style: const TextStyle(
                               color: Colors.blueAccent,
                               fontWeight: FontWeight.bold,
@@ -731,12 +723,12 @@ class CourseDetailPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      course['title'] as String,
+                      course.title,
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Beban Belajar: ${course['credits']} SKS',
+                      'Beban Belajar: ${course.credits} SKS',
                       style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
                     ),
                   ],
@@ -766,7 +758,6 @@ class CourseDetailPage extends StatelessWidget {
             ),
             const Spacer(),
 
-            // Memanggil aksi mutasi state via context.read()
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -791,7 +782,7 @@ class CourseDetailPage extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 onPressed: () {
-                  context.read<CourseState>().toggleFavorite(code);
+                  context.read<CourseState>().toggleFavorite(course.code);
                 },
               ),
             ),

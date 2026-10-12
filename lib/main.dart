@@ -10,13 +10,12 @@ const String studentName = 'Putu Krisna Wiryatama';
 const String studentId = '2415051099';
 
 void main() {
-  // Inisialisasi Service dan Repository sebelum dipasang ke Provider
   final courseService = CourseService();
   final courseRepository = CourseRepository(courseService);
 
   runApp(
     ChangeNotifierProvider(
-      create: (_) => CourseState(courseRepository), // Oper repository ke CourseState
+      create: (_) => CourseState(courseRepository)..loadCourses(), // Trigger loadCourses()
       child: const LearningExplorerApp(),
     ),
   );
@@ -48,136 +47,142 @@ class MainAdaptiveShell extends StatefulWidget {
 
 class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
   int _selectedIndex = 0;
-  late Future<Map<String, dynamic>> _dashboardFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    // Pemuatan data melalui Provider yang memanggil Repository
-    final courseState = context.read<CourseState>();
-    _dashboardFuture = _fetchDashboardData(courseState);
-  }
-
-  Future<Map<String, dynamic>> _fetchDashboardData(CourseState courseState) async {
-    final courses = await courseState.fetchCourses();
-    final student = await courseState.fetchStudentProfile();
-
-    debugPrint('Tahap 10: Berhasil memuat ${courses.length} courses via CourseRepository');
-
-    return {
-      'student': student,
-      'courses': courses,
-    };
-  }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _dashboardFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (snapshot.hasError) {
+    final state = context.watch<CourseState>();
+    if (state.isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 14),
+              Text('Memuat data dashboard...', style: TextStyle(color: Colors.blueGrey)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (state.error != null) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+                const SizedBox(height: 12),
+                Text(
+                  'Terjadi kesalahan:\n${state.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () => context.read<CourseState>().loadCourses(),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Coba Lagi'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final student = state.student ?? {
+      'nim': studentId,
+      'name': studentName,
+      'semester': '5',
+      'program': 'Pendidikan Teknik Informatika',
+    };
+    final courses = state.courses;
+
+    final List<Widget> pages = [
+      HomeTab(student: student, courses: courses),
+      CoursesTab(courses: courses),
+      ProfileTab(student: student),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isWide = constraints.maxWidth >= 840;
+
+        if (isWide) {
           return Scaffold(
-            body: Center(
-              child: Text(
-                'Gagal memuat data: ${snapshot.error}',
-                style: const TextStyle(color: Colors.red),
+            appBar: AppBar(
+              title: const Text(
+                'Learning Dashboard',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
               ),
+              backgroundColor: Colors.blueAccent,
+            ),
+            body: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                NavigationRail(
+                  selectedIndex: _selectedIndex,
+                  onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+                  labelType: NavigationRailLabelType.all,
+                  destinations: const [
+                    NavigationRailDestination(
+                      icon: Icon(Icons.home_outlined),
+                      selectedIcon: Icon(Icons.home),
+                      label: Text('Home'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.school_outlined),
+                      selectedIcon: Icon(Icons.school),
+                      label: Text('Courses'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.person_outline),
+                      selectedIcon: Icon(Icons.person),
+                      label: Text('Profile'),
+                    ),
+                  ],
+                ),
+                const VerticalDivider(thickness: 1, width: 1),
+                Expanded(child: pages[_selectedIndex]),
+              ],
             ),
           );
         }
 
-        final data = snapshot.data!;
-        final student = data['student'] as Map<String, dynamic>;
-        final courses = data['courses'] as List<Course>;
-
-        final List<Widget> pages = [
-          HomeTab(student: student, courses: courses),
-          CoursesTab(courses: courses),
-          ProfileTab(student: student),
-        ];
-
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final bool isWide = constraints.maxWidth >= 840;
-
-            if (isWide) {
-              return Scaffold(
-                appBar: AppBar(
-                  title: const Text(
-                    'Learning Dashboard',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                  backgroundColor: Colors.blueAccent,
-                ),
-                body: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    NavigationRail(
-                      selectedIndex: _selectedIndex,
-                      onDestinationSelected: (index) => setState(() => _selectedIndex = index),
-                      labelType: NavigationRailLabelType.all,
-                      destinations: const [
-                        NavigationRailDestination(
-                          icon: Icon(Icons.home_outlined),
-                          selectedIcon: Icon(Icons.home),
-                          label: Text('Home'),
-                        ),
-                        NavigationRailDestination(
-                          icon: Icon(Icons.school_outlined),
-                          selectedIcon: Icon(Icons.school),
-                          label: Text('Courses'),
-                        ),
-                        NavigationRailDestination(
-                          icon: Icon(Icons.person_outline),
-                          selectedIcon: Icon(Icons.person),
-                          label: Text('Profile'),
-                        ),
-                      ],
-                    ),
-                    const VerticalDivider(thickness: 1, width: 1),
-                    Expanded(child: pages[_selectedIndex]),
-                  ],
-                ),
-              );
-            }
-
-            return Scaffold(
-              appBar: AppBar(
-                title: const Text(
-                  'Learning Dashboard',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-                backgroundColor: Colors.blueAccent,
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              'Learning Dashboard',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            backgroundColor: Colors.blueAccent,
+          ),
+          body: pages[_selectedIndex],
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: _selectedIndex,
+            onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home),
+                label: 'Home',
               ),
-              body: pages[_selectedIndex],
-              bottomNavigationBar: NavigationBar(
-                selectedIndex: _selectedIndex,
-                onDestinationSelected: (index) => setState(() => _selectedIndex = index),
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.home_outlined),
-                    selectedIcon: Icon(Icons.home),
-                    label: 'Home',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.school_outlined),
-                    selectedIcon: Icon(Icons.school),
-                    label: 'Courses',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.person_outline),
-                    selectedIcon: Icon(Icons.person),
-                    label: 'Profile',
-                  ),
-                ],
+              NavigationDestination(
+                icon: Icon(Icons.school_outlined),
+                selectedIcon: Icon(Icons.school),
+                label: 'Courses',
               ),
-            );
-          },
+              NavigationDestination(
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+            ],
+          ),
         );
       },
     );
@@ -446,7 +451,7 @@ class CoursesTab extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            '• Tap: Detail | Long Press: Modal | Arsitektur: Provider -> Repository -> Service',
+            '• Tap: Detail | Long Press: Modal | Async State via CourseState Provider',
             style: TextStyle(fontSize: 11, color: Colors.grey),
           ),
           const SizedBox(height: 12),

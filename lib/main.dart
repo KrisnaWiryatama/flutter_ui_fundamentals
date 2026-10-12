@@ -1,9 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:provider/provider.dart';
 import 'course_state.dart';
-import 'models/course.dart'; // Import model Course Tahap 8
+import 'models/course.dart';
+import 'services/course_service.dart'; // Import CourseService Tahap 9
 
 // Identitas Wajib Praktikum
 const String studentName = 'Putu Krisna Wiryatama';
@@ -44,17 +43,29 @@ class MainAdaptiveShell extends StatefulWidget {
 
 class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
   int _selectedIndex = 0;
+
+  // TAHAP 9: Inisialisasi Service untuk memisahkan sumber data dari UI
+  final CourseService _courseService = CourseService();
   late Future<Map<String, dynamic>> _dashboardFuture;
 
   @override
   void initState() {
     super.initState();
-    _dashboardFuture = _loadStudentData();
+    _dashboardFuture = _fetchDashboardData();
   }
 
-  Future<Map<String, dynamic>> _loadStudentData() async {
-    final jsonString = await rootBundle.loadString('assets/data/student_data.json');
-    return jsonDecode(jsonString) as Map<String, dynamic>;
+  // Poin 41: Memanfaatkan CourseService untuk memuat data
+  Future<Map<String, dynamic>> _fetchDashboardData() async {
+    final courses = await _courseService.loadCourses();
+    final student = await _courseService.loadStudentProfile();
+
+    // Verifikasi pengujian service via debugPrint
+    debugPrint('Tahap 9: Berhasil memuat ${courses.length} courses via CourseService');
+
+    return {
+      'student': student,
+      'courses': courses,
+    };
   }
 
   @override
@@ -80,12 +91,7 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
 
         final data = snapshot.data!;
         final student = data['student'] as Map<String, dynamic>;
-        final rawCourses = data['courses'] as List<dynamic>;
-
-        // TAHAP 8: Parsing List JSON mentah menjadi List<Course> object model
-        final List<Course> courses = rawCourses
-            .map((c) => Course.fromJson(c as Map<String, dynamic>))
-            .toList();
+        final courses = data['courses'] as List<Course>;
 
         final List<Widget> pages = [
           HomeTab(student: student, courses: courses),
@@ -178,7 +184,7 @@ class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
 
 class HomeTab extends StatelessWidget {
   final Map<String, dynamic> student;
-  final List<Course> courses; // Menggunakan List<Course>
+  final List<Course> courses;
 
   const HomeTab({
     super.key,
@@ -266,10 +272,8 @@ class HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mengakses properti model Course langsung
     final int doneCount = courses.where((c) => c.status == 'done').length;
     final int totalCredits = courses.fold(0, (sum, c) => sum + c.credits);
-
     final courseState = context.watch<CourseState>();
 
     return SingleChildScrollView(
@@ -393,7 +397,7 @@ class HomeTab extends StatelessWidget {
 }
 
 class CoursesTab extends StatelessWidget {
-  final List<Course> courses; // Menerima List<Course>
+  final List<Course> courses;
 
   const CoursesTab({
     super.key,
@@ -440,7 +444,7 @@ class CoursesTab extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            '• Tap: Detail | Long Press: Modal | Love: Toggle via Model Course',
+            '• Tap: Detail | Long Press: Modal | Data dimuat via CourseService',
             style: TextStyle(fontSize: 11, color: Colors.grey),
           ),
           const SizedBox(height: 12),
@@ -493,7 +497,7 @@ class CoursesTab extends StatelessWidget {
 }
 
 class CourseCard extends StatefulWidget {
-  final Course item; // Menggunakan tipe data Course
+  final Course item;
   final VoidCallback onLongPress;
   final VoidCallback onTap;
 
@@ -640,7 +644,7 @@ class _CourseCardState extends State<CourseCard> {
 }
 
 class CourseDetailPage extends StatelessWidget {
-  final Course course; // Menggunakan objek model Course
+  final Course course;
   final bool isInitiallyFavorite;
 
   const CourseDetailPage({

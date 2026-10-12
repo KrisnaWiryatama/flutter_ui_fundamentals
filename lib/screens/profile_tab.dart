@@ -103,6 +103,12 @@ class _ProfileTabState extends State<ProfileTab> {
                   title: const Text('Semester'),
                   subtitle: Text('Semester ${widget.student['semester']}'),
                 ),
+                const Divider(height: 1),
+                const ListTile(
+                  leading: Icon(Icons.layers, color: Colors.blueAccent),
+                  title: Text('Versi Aplikasi'),
+                  subtitle: Text('Course Explorer v2 (Clean Architecture & Provider)'),
+                ),
               ],
             ),
           ),

@@ -46,12 +46,12 @@ class CoursesTab extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Daftar Materi Kuliah',
+            'Daftar Materi Kuliah (v2)',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           const Text(
-            '• Tap: Detail | Long Press: Modal | Struktur Rapi Terpisah Folder',
+            '• Tap: Detail | Long Press: Modal | Terintegrasi Provider -> Repository -> Service',
             style: TextStyle(fontSize: 11, color: Colors.grey),
           ),
           const SizedBox(height: 12),

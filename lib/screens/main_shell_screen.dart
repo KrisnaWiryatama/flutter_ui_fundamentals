@@ -28,7 +28,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 14),
-              Text('Memuat data dashboard...', style: TextStyle(color: Colors.blueGrey)),
+              Text('Memuat Course Explorer v2...', style: TextStyle(color: Colors.blueGrey)),
             ],
           ),
         ),
@@ -85,7 +85,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
           return Scaffold(
             appBar: AppBar(
               title: const Text(
-                'Learning Dashboard',
+                'Course Explorer v2',
                 style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
               ),
               backgroundColor: Colors.blueAccent,
@@ -125,7 +125,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
         return Scaffold(
           appBar: AppBar(
             title: const Text(
-              'Learning Dashboard',
+              'Course Explorer v2',
               style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
             ),
             backgroundColor: Colors.blueAccent,

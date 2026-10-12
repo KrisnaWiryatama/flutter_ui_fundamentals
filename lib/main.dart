@@ -2,16 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'course_state.dart';
 import 'models/course.dart';
-import 'services/course_service.dart'; // Import CourseService Tahap 9
+import 'repositories/course_repository.dart';
+import 'services/course_service.dart';
 
 // Identitas Wajib Praktikum
 const String studentName = 'Putu Krisna Wiryatama';
 const String studentId = '2415051099';
 
 void main() {
+  // Inisialisasi Service dan Repository sebelum dipasang ke Provider
+  final courseService = CourseService();
+  final courseRepository = CourseRepository(courseService);
+
   runApp(
     ChangeNotifierProvider(
-      create: (_) => CourseState(),
+      create: (_) => CourseState(courseRepository), // Oper repository ke CourseState
       child: const LearningExplorerApp(),
     ),
   );
@@ -43,24 +48,21 @@ class MainAdaptiveShell extends StatefulWidget {
 
 class _MainAdaptiveShellState extends State<MainAdaptiveShell> {
   int _selectedIndex = 0;
-
-  // TAHAP 9: Inisialisasi Service untuk memisahkan sumber data dari UI
-  final CourseService _courseService = CourseService();
   late Future<Map<String, dynamic>> _dashboardFuture;
 
   @override
   void initState() {
     super.initState();
-    _dashboardFuture = _fetchDashboardData();
+    // Pemuatan data melalui Provider yang memanggil Repository
+    final courseState = context.read<CourseState>();
+    _dashboardFuture = _fetchDashboardData(courseState);
   }
 
-  // Poin 41: Memanfaatkan CourseService untuk memuat data
-  Future<Map<String, dynamic>> _fetchDashboardData() async {
-    final courses = await _courseService.loadCourses();
-    final student = await _courseService.loadStudentProfile();
+  Future<Map<String, dynamic>> _fetchDashboardData(CourseState courseState) async {
+    final courses = await courseState.fetchCourses();
+    final student = await courseState.fetchStudentProfile();
 
-    // Verifikasi pengujian service via debugPrint
-    debugPrint('Tahap 9: Berhasil memuat ${courses.length} courses via CourseService');
+    debugPrint('Tahap 10: Berhasil memuat ${courses.length} courses via CourseRepository');
 
     return {
       'student': student,
@@ -444,7 +446,7 @@ class CoursesTab extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            '• Tap: Detail | Long Press: Modal | Data dimuat via CourseService',
+            '• Tap: Detail | Long Press: Modal | Arsitektur: Provider -> Repository -> Service',
             style: TextStyle(fontSize: 11, color: Colors.grey),
           ),
           const SizedBox(height: 12),

@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
-import 'models/course.dart';
-import 'repositories/course_repository.dart';
+import '../models/course.dart';
+import '../repositories/course_repository.dart';
 
-class CourseState extends ChangeNotifier {
+class CourseProvider extends ChangeNotifier {
   final CourseRepository repository;
 
-  CourseState(this.repository);
+  CourseProvider(this.repository);
 
   List<Course> courses = [];
   Map<String, dynamic>? student;

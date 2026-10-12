@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../constants/app_constants.dart';
 import '../models/course.dart';
 import '../providers/course_provider.dart';
-import '../widgets/favorites_bottom_sheet.dart';
+import 'favorites_screen.dart';
 
 class HomeTab extends StatelessWidget {
   final Map<String, dynamic> student;
@@ -83,7 +83,14 @@ class HomeTab extends StatelessWidget {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   clipBehavior: Clip.antiAlias,
                   child: InkWell(
-                    onTap: () => showFavoritesBottomSheet(context, courses),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const FavoritesScreen(),
+                        ),
+                      );
+                    },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
                       child: Column(
@@ -105,7 +112,6 @@ class HomeTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-
           const Text('Kompetensi Praktikum', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
           Wrap(

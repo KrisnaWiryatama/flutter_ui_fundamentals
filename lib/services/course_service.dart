@@ -5,7 +5,7 @@ import '../models/course.dart';
 class CourseService {
   Future<List<Course>> loadCourses() async {
     final jsonString = await rootBundle.loadString(
-      'assets/data/student_data.json',
+      'assets/data/student_data.json', // Poin 1: Menggunakan rootBundle untuk membaca file JSON dari assets
     );
     final data = jsonDecode(jsonString) as Map<String, dynamic>;
     final list = data['courses'] as List<dynamic>;

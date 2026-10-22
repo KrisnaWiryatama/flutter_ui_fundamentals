@@ -44,3 +44,13 @@ Proyek ini menerapkan Clean Architecture dengan Separation of Concerns dan Provi
 ## Alur Ketergantungan (Dependency Direction)
 ```text
 UI (Screens & Widgets) ➔ Provider (CourseProvider) ➔ Repository (CourseRepository) ➔ Service (CourseService)
+
+## REST API Documentation (Pertemuan 7)
+- **Base URL**: `https://course-api-pearl.vercel.app`
+- **Endpoint Latihan**: `GET /courses`
+- **Struktur Response**:
+  - `id` (int): Primary key resource
+  - `code` (string): Kode unik mata kuliah (misal: "MOB01")
+  - `title` (string): Nama mata kuliah
+  - `credits` (int): Bobot SKS
+  - `status` (string): "planned" | "active" | "done"

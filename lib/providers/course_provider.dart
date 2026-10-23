@@ -42,4 +42,10 @@ class CourseProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // Aksi membuat course baru dan langsung merefresh daftar course
+  Future<void> addCourse(Course newCourse) async {
+    await repository.createCourse(newCourse);
+    await loadCourses(); // Merefresh list secara utuh
+  }
 }

@@ -1,3 +1,4 @@
+import '../constants/app_constants.dart';
 import '../models/course.dart';
 import '../services/course_api_service.dart';
 
@@ -6,18 +7,22 @@ class CourseRepository {
 
   CourseRepository(this.apiService);
 
-  // Ambil daftar course langsung dari REST API
   Future<List<Course>> getCourses() {
     return apiService.getCourses();
   }
 
-  // Pertahankan method ini agar home_tab dan profile_tab tidak error
+  // Teruskan pembuatan course baru
+  Future<Course> createCourse(Course course) {
+    return apiService.createCourse(course);
+  }
+
   Future<Map<String, dynamic>> getStudentProfile() async {
     return {
-      'name': 'Putu Krisna Wiryatama',
-      'nim': '2415051099',
-      'prodi': 'Pendidikan Teknik Informatika',
+      'name': studentName,
+      'nim': studentId,
+      'program': 'Pendidikan Teknik Informatika',
       'semester': 5,
+      'track': 'Mobile Application Development',
     };
   }
 }

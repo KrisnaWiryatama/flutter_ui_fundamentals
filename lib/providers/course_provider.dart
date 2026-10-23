@@ -13,6 +13,7 @@ class CourseProvider extends ChangeNotifier {
   String? error;
 
   final Set<String> favorites = {};
+
   bool isFavorite(String id) => favorites.contains(id);
 
   void toggleFavorite(String id) {

@@ -1,16 +1,23 @@
 import '../models/course.dart';
-import '../services/course_service.dart';
+import '../services/course_api_service.dart';
 
 class CourseRepository {
-  final CourseService service;
+  final CourseApiService apiService;
 
-  CourseRepository(this.service);
+  CourseRepository(this.apiService);
 
+  // Ambil daftar course langsung dari REST API
   Future<List<Course>> getCourses() {
-    return service.loadCourses();
+    return apiService.getCourses();
   }
 
-  Future<Map<String, dynamic>> getStudentProfile() {
-    return service.loadStudentProfile();
+  // Pertahankan method ini agar home_tab dan profile_tab tidak error
+  Future<Map<String, dynamic>> getStudentProfile() async {
+    return {
+      'name': 'Putu Krisna Wiryatama',
+      'nim': '2415051099',
+      'prodi': 'Pendidikan Teknik Informatika',
+      'semester': 5,
+    };
   }
 }

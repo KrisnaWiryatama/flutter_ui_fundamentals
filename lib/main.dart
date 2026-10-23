@@ -1,32 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/course_provider.dart';
+import 'services/course_api_service.dart';
 import 'repositories/course_repository.dart';
+import 'providers/course_provider.dart';
 import 'screens/main_shell_screen.dart';
-import 'services/course_service.dart';
 
 void main() {
-  final courseService = CourseService();
-  final courseRepository = CourseRepository(courseService);
+  const String apiBaseUrl = 'https://course-api-pearl.vercel.app';
+  final apiService = CourseApiService(apiBaseUrl);
+  final repository = CourseRepository(apiService);
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => CourseProvider(courseRepository)..loadCourses(),
-      child: const LearningExplorerApp(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => CourseProvider(repository)..loadCourses(),
+        ),
+      ],
+      child: const MyApp(),
     ),
   );
 }
 
-class LearningExplorerApp extends StatelessWidget {
-  const LearningExplorerApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Learning Dashboard',
+      title: 'Course Explorer v2',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
       home: const MainShellScreen(),

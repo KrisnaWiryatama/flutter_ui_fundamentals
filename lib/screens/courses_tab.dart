@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/course.dart';
+import '../providers/course_provider.dart';
 import '../widgets/course_card.dart';
+import '../widgets/error_view.dart';
 import 'course_detail_screen.dart';
 
 class CoursesTab extends StatelessWidget {
-  final List<Course> courses;
+  final List<Course>? courses;
 
   const CoursesTab({
     super.key,
-    required this.courses,
+    this.courses,
   });
 
   void _showCourseDetailModal(BuildContext context, Course item) {
@@ -57,6 +60,37 @@ class CoursesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<CourseProvider>();
+
+    // 1. Loading State
+    if (provider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // 2. Error State
+    if (provider.error != null) {
+      return ErrorView(
+        message: provider.error!,
+        onRetry: provider.loadCourses,
+      );
+    }
+
+    // Ambil data course dari provider (atau fallback parameter konstruktor)
+    final displayCourses = provider.courses.isNotEmpty
+        ? provider.courses
+        : (courses ?? []);
+
+    // 3. Empty State
+    if (displayCourses.isEmpty) {
+      return const Center(
+        child: Text(
+          'Data course belum tersedia',
+          style: TextStyle(color: Colors.grey, fontSize: 14),
+        ),
+      );
+    }
+
+    // 4. Success State
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -70,7 +104,7 @@ class CoursesTab extends StatelessWidget {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               Text(
-                '${courses.length} Course',
+                '${displayCourses.length} Course',
                 style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
             ],
@@ -83,9 +117,9 @@ class CoursesTab extends StatelessWidget {
           const SizedBox(height: 12),
           Expanded(
             child: ListView.builder(
-              itemCount: courses.length,
+              itemCount: displayCourses.length,
               itemBuilder: (context, index) {
-                final Course item = courses[index];
+                final Course item = displayCourses[index];
                 return CourseCard(
                   item: item,
                   onLongPress: () => _showCourseDetailModal(context, item),

@@ -25,6 +25,17 @@ class CoursesTab extends StatelessWidget {
     );
   }
 
+  void _showEditCourseModal(BuildContext context, Course item) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _EditCourseFormModal(course: item),
+    );
+  }
+
   void _showCourseDetailModal(BuildContext context, Course item) {
     showModalBottomSheet(
       context: context,
@@ -38,12 +49,26 @@ class CoursesTab extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                item.code,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    item.code,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueAccent,
+                      fontSize: 16,
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showEditCourseModal(context, item);
+                    },
+                    icon: const Icon(Icons.edit, size: 18),
+                    label: const Text('Edit'),
+                  ),
+                ],
               ),
               const SizedBox(height: 6),
               Text(
@@ -60,7 +85,8 @@ class CoursesTab extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               const Text(
-                'Info singkat dibuka via long press gesture pada kartu materi.',
+                'Gunakan tombol Edit di atas untuk mengubah detail materi.',
+                style: TextStyle(fontSize: 12, color: Colors.black54),
               ),
             ],
           ),
@@ -117,7 +143,7 @@ class CoursesTab extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             const Text(
-              '• Tap: Detail | Long Press: Modal | FAB: Tambah Data',
+              '• Long Press: Modal & Edit | FAB: Tambah Data',
               style: TextStyle(fontSize: 11, color: Colors.grey),
             ),
             const SizedBox(height: 12),
@@ -158,7 +184,216 @@ class CoursesTab extends StatelessWidget {
   }
 }
 
-// Form Modal Terpisah untuk HTTP POST
+// Modal Form Edit Resource (HTTP PUT)
+class _EditCourseFormModal extends StatefulWidget {
+  final Course course;
+
+  const _EditCourseFormModal({required this.course});
+
+  @override
+  State<_EditCourseFormModal> createState() => _EditCourseFormModalState();
+}
+
+class _EditCourseFormModalState extends State<_EditCourseFormModal> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _codeController;
+  late final TextEditingController _titleController;
+  late final TextEditingController _creditsController;
+  late String _selectedStatus;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _codeController = TextEditingController(text: widget.course.code);
+    _titleController = TextEditingController(text: widget.course.title);
+    _creditsController = TextEditingController(text: widget.course.credits.toString());
+    _selectedStatus = widget.course.status;
+  }
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    _titleController.dispose();
+    _creditsController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleUpdate() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (widget.course.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ID course tidak valid untuk update'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    final updatedCourse = Course(
+      id: widget.course.id,
+      code: widget.course.code,
+      title: _titleController.text.trim(),
+      credits: int.parse(_creditsController.text.trim()),
+      status: _selectedStatus,
+    );
+
+    try {
+      final provider = context.read<CourseProvider>();
+      await provider.editCourse(widget.course.id!, updatedCourse);
+
+      if (!mounted) return;
+
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Course berhasil diperbarui!'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal memperbarui course: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Edit Course',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'ID: ${widget.course.id ?? '-'}',
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Field Code dibuat read-only
+              TextFormField(
+                controller: _codeController,
+                readOnly: true,
+                decoration: InputDecoration(
+                  labelText: 'Kode Mata Kuliah (Terkunci)',
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: const OutlineInputBorder(),
+                  helperText: 'Kode tidak dapat diubah (kunci favorit)',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Nama Mata Kuliah',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Nama mata kuliah wajib diisi';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _creditsController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Beban SKS',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'SKS wajib diisi';
+                  }
+                  final parsed = int.tryParse(val.trim());
+                  if (parsed == null || parsed <= 0) {
+                    return 'SKS harus berupa angka positif';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _selectedStatus,
+                decoration: const InputDecoration(
+                  labelText: 'Status',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'planned', child: Text('Planned (Belum)')),
+                  DropdownMenuItem(value: 'active', child: Text('Active (Berjalan)')),
+                  DropdownMenuItem(value: 'done', child: Text('Done (Selesai)')),
+                ],
+                onChanged: (val) {
+                  if (val != null) setState(() => _selectedStatus = val);
+                },
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: _isSaving ? null : _handleUpdate,
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Simpan Perubahan',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Modal Form Tambah Resource (Tetap dipertahankan dari Tahap 6)
 class _AddCourseFormModal extends StatefulWidget {
   const _AddCourseFormModal();
 

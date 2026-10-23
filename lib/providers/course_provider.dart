@@ -43,9 +43,14 @@ class CourseProvider extends ChangeNotifier {
     }
   }
 
-  // Aksi membuat course baru dan langsung merefresh daftar course
   Future<void> addCourse(Course newCourse) async {
     await repository.createCourse(newCourse);
-    await loadCourses(); // Merefresh list secara utuh
+    await loadCourses();
+  }
+
+  // Aksi update course lalu refresh list
+  Future<void> editCourse(int id, Course updatedCourse) async {
+    await repository.updateCourse(id, updatedCourse);
+    await loadCourses();
   }
 }

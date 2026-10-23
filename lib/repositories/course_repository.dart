@@ -15,9 +15,13 @@ class CourseRepository {
     return apiService.createCourse(course);
   }
 
-  // Teruskan pembaruan course
   Future<void> updateCourse(int id, Course course) {
     return apiService.updateCourse(id, course);
+  }
+
+  // Teruskan penghapusan course
+  Future<void> deleteCourse(int id) {
+    return apiService.deleteCourse(id);
   }
 
   Future<Map<String, dynamic>> getStudentProfile() async {

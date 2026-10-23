@@ -36,13 +36,69 @@ class CoursesTab extends StatelessWidget {
     );
   }
 
+  Future<void> _confirmDelete(BuildContext context, Course item) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Hapus Course'),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus materi "${item.title}" (${item.code})?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    if (item.id == null) return;
+
+    if (!context.mounted) return;
+
+    try {
+      final provider = context.read<CourseProvider>();
+      await provider.removeCourse(item.id!, item.code);
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Course "${item.title}" berhasil dihapus'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal menghapus course: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   void _showCourseDetailModal(BuildContext context, Course item) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) {
+      builder: (modalCtx) {
         return Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -60,13 +116,27 @@ class CoursesTab extends StatelessWidget {
                       fontSize: 16,
                     ),
                   ),
-                  TextButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _showEditCourseModal(context, item);
-                    },
-                    icon: const Icon(Icons.edit, size: 18),
-                    label: const Text('Edit'),
+                  Row(
+                    children: [
+                      // Tombol Edit
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.pop(modalCtx);
+                          _showEditCourseModal(context, item);
+                        },
+                        icon: const Icon(Icons.edit, size: 18),
+                        label: const Text('Edit'),
+                      ),
+                      // Tombol Delete
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.pop(modalCtx);
+                          _confirmDelete(context, item);
+                        },
+                        icon: const Icon(Icons.delete, size: 18, color: Colors.redAccent),
+                        label: const Text('Hapus', style: TextStyle(color: Colors.redAccent)),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -85,7 +155,7 @@ class CoursesTab extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               const Text(
-                'Gunakan tombol Edit di atas untuk mengubah detail materi.',
+                'Info singkat materi. Tekan tombol Hapus atau Edit di atas untuk mengelola data.',
                 style: TextStyle(fontSize: 12, color: Colors.black54),
               ),
             ],
@@ -143,7 +213,7 @@ class CoursesTab extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             const Text(
-              '• Long Press: Modal & Edit | FAB: Tambah Data',
+              '• Long Press: Detail & Aksi | FAB: Tambah Data',
               style: TextStyle(fontSize: 11, color: Colors.grey),
             ),
             const SizedBox(height: 12),
@@ -184,7 +254,7 @@ class CoursesTab extends StatelessWidget {
   }
 }
 
-// Modal Form Edit Resource (HTTP PUT)
+// Modal Form Edit Resource
 class _EditCourseFormModal extends StatefulWidget {
   final Course course;
 
@@ -221,15 +291,7 @@ class _EditCourseFormModalState extends State<_EditCourseFormModal> {
 
   Future<void> _handleUpdate() async {
     if (!_formKey.currentState!.validate()) return;
-    if (widget.course.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('ID course tidak valid untuk update'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+    if (widget.course.id == null) return;
 
     setState(() => _isSaving = true);
 
@@ -296,7 +358,6 @@ class _EditCourseFormModalState extends State<_EditCourseFormModal> {
                 ],
               ),
               const SizedBox(height: 16),
-              // Field Code dibuat read-only
               TextFormField(
                 controller: _codeController,
                 readOnly: true,
@@ -393,7 +454,7 @@ class _EditCourseFormModalState extends State<_EditCourseFormModal> {
   }
 }
 
-// Modal Form Tambah Resource (Tetap dipertahankan dari Tahap 6)
+// Modal Form Tambah Resource
 class _AddCourseFormModal extends StatefulWidget {
   const _AddCourseFormModal();
 

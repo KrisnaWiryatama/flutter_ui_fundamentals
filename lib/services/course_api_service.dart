@@ -36,7 +36,6 @@ class CourseApiService {
     throw Exception('Gagal membuat course: HTTP ${response.statusCode}');
   }
 
-  // Method HTTP PUT untuk memperbarui data course
   Future<void> updateCourse(int id, Course course) async {
     final response = await http.put(
       Uri.parse('$baseUrl/courses/$id'),
@@ -46,6 +45,17 @@ class CourseApiService {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Gagal memperbarui course: HTTP ${response.statusCode}');
+    }
+  }
+
+  // Method HTTP DELETE untuk menghapus resource course
+  Future<void> deleteCourse(int id) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/courses/$id'),
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Gagal menghapus course: HTTP ${response.statusCode}');
     }
   }
 }

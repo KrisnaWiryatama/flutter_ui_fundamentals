@@ -48,9 +48,19 @@ class CourseProvider extends ChangeNotifier {
     await loadCourses();
   }
 
-  // Aksi update course lalu refresh list
   Future<void> editCourse(int id, Course updatedCourse) async {
     await repository.updateCourse(id, updatedCourse);
+    await loadCourses();
+  }
+
+  // Aksi hapus course dan cegah data yatim di daftar favorit
+  Future<void> removeCourse(int id, String courseCode) async {
+    await repository.deleteCourse(id);
+
+    if (favorites.contains(courseCode)) {
+      favorites.remove(courseCode);
+    }
+
     await loadCourses();
   }
 }

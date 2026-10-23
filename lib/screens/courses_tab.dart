@@ -21,8 +21,9 @@ class CoursesTab extends StatefulWidget {
 }
 
 class _CoursesTabState extends State<CoursesTab> {
-  String? _errorMessage;
+  List<Course> _apiCourses = [];
   bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -41,10 +42,17 @@ class _CoursesTabState extends State<CoursesTab> {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
-        debugPrint('HTTP GET Berhasil: ${data.length} item');
+
+        // 4. Konversi response list dynamic menjadi List<Course>
+        final List<Course> parsedList = data
+            .map((item) => Course.fromJson(item as Map<String, dynamic>))
+            .toList();
+
+        debugPrint('Berhasil parsing ${parsedList.length} objek Course');
 
         if (!mounted) return;
         setState(() {
+          _apiCourses = parsedList;
           _isLoading = false;
         });
       } else {
@@ -52,7 +60,6 @@ class _CoursesTabState extends State<CoursesTab> {
       }
     } catch (e) {
       debugPrint('Error fetchCourses: $e');
-
       if (!mounted) return;
       setState(() {
         _errorMessage = e.toString();
@@ -94,10 +101,6 @@ class _CoursesTabState extends State<CoursesTab> {
                 'Beban SKS: ${item.credits} SKS | Status: ${item.status}',
                 style: const TextStyle(color: Colors.grey),
               ),
-              const SizedBox(height: 12),
-              const Text(
-                'Info singkat dibuka via long press gesture pada kartu materi.',
-              ),
             ],
           ),
         );
@@ -113,55 +116,49 @@ class _CoursesTabState extends State<CoursesTab> {
 
     if (_errorMessage != null) {
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              const Text(
-                'Gagal Memuat Data',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.red, fontSize: 14),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: fetchCourses,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Coba Lagi'),
-              ),
-            ],
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const SizedBox(height: 12),
+            Text('Error: $_errorMessage'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: fetchCourses,
+              child: const Text('Coba Lagi'),
+            ),
+          ],
         ),
       );
     }
+
+    // 5. Tampilkan daftar course hasil konversi Model Dart ke UI
+    final displayList = _apiCourses.isNotEmpty ? _apiCourses : widget.courses;
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Daftar Materi Kuliah (v2)',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            '• Tap: Detail | Long Press: Modal | Terintegrasi Provider -> Repository -> Service',
-            style: TextStyle(fontSize: 11, color: Colors.grey),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Daftar Materi Kuliah (Model Dart)',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                '${displayList.length} Course',
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Expanded(
             child: ListView.builder(
-              itemCount: widget.courses.length,
+              itemCount: displayList.length,
               itemBuilder: (context, index) {
-                final Course item = widget.courses[index];
+                final Course item = displayList[index];
                 return CourseCard(
                   item: item,
                   onLongPress: () => _showCourseDetailModal(context, item),

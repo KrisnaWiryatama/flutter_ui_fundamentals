@@ -7,6 +7,7 @@ import 'screens/main_shell_screen.dart';
 
 void main() {
   const String apiBaseUrl = 'https://course-api-pearl.vercel.app';
+  
   final apiService = CourseApiService(apiBaseUrl);
   final repository = CourseRepository(apiService);
 

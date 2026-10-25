@@ -56,3 +56,42 @@ UI (Screens & Widgets) ➔ Provider (CourseProvider) ➔ Repository (CourseRepos
   - `status` (string): "planned" | "active" | "done"
 
 Buat table database course di Supabase
+
+# Course Data Manager (Course Explorer v2)
+
+Aplikasi manajemen mata kuliah responsif berbasis Flutter dengan implementasi **Repository Pattern**, **Provider State Management**, dan integrasi ganda backend (**REST API MockAPI** & **PostgreSQL Supabase**).
+
+## Identitas Pengembang
+- **Nama:** Putu Krisna Wiryatama
+- **NIM:** 2415051099
+- **Program Studi:** Pendidikan Teknik Informatika
+- **Institusi:** Universitas Pendidikan Ganesha
+
+---
+
+## Arsitektur Aplikasi
+Aplikasi menerapkan prinsip *Separation of Concerns* (SoC) dengan struktur layer berikut:
+- **Presentation Layer (`screens/`, `widgets/`):** Menangani antarmuka pengguna yang responsif (`NavigationBar` / `NavigationRail`), visualisasi data, form modal CRUD, dan feedback dialog/SnackBar.
+- **State Management (`providers/`):** Mengelola state aplikasi (`CourseProvider`) untuk status loading, data courses, error state, dan sinkronisasi list favorites.
+- **Repository Layer (`repositories/`):** Sebagai *single source of truth* (`CourseRepository`) yang menjembatani layer presentasi dengan data source.
+- **Data Source Layer (`services/`):** Mengimplementasikan kontrak abstrak `CourseDataSource` untuk memudahkan pergantian backend:
+  - `CourseApiService`: Berkomunikasi dengan MockAPI REST endpoint.
+  - `CourseSupabaseService`: Berkomunikasi langsung dengan PostgreSQL Supabase.
+
+---
+
+## Backend & Database
+- **Database Engine:** PostgreSQL via Supabase
+- **Tabel Utama:** `public.courses`
+  - Kolom: `id` (bigint/identity), `code` (text), `title` (text), `credits` (int), `status` (text), `created_at` (timestamp)
+  - Constraint: `CHECK (status IN ('planned', 'active', 'done'))`
+  - Keamanan: Row Level Security (RLS) diaktifkan dengan policy akses untuk kebutuhan laboratorium.
+
+---
+
+## Cara Menjalankan Proyek
+
+1. **Clone Repository:**
+   ```bash
+   git clone [https://github.com/KrisnaWiryatama/flutter_ui_fundamentals.git](https://github.com/KrisnaWiryatama/flutter_ui_fundamentals.git)
+   cd flutter_ui_fundamentals

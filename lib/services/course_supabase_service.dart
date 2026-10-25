@@ -10,7 +10,13 @@ class CourseSupabaseService implements CourseDataSource {
     final data = await supabase
         .from('courses')
         .select()
-        .order('id');
+        .order('id')
+        .timeout(
+          const Duration(seconds: 6),
+          onTimeout: () {
+            throw Exception('Koneksi internet terputus atau batas waktu habis.');
+          },
+        );
 
     return (data as List)
         .map((e) => Course.fromJson(e as Map<String, dynamic>))

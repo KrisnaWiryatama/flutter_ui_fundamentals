@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'constants/app_constants.dart';
+import 'services/course_data_source.dart';
 import 'services/course_supabase_service.dart';
 import 'repositories/course_repository.dart';
 import 'providers/course_provider.dart';
@@ -15,8 +16,8 @@ Future<void> main() async {
     anonKey: supabaseAnonKey,
   );
 
-  final supabaseService = CourseSupabaseService();
-  final repository = CourseRepository(supabaseService);
+  final CourseDataSource dataSource = CourseSupabaseService();
+  final repository = CourseRepository(dataSource);
 
   runApp(
     MultiProvider(
@@ -39,7 +40,7 @@ class MyApp extends StatelessWidget {
       title: 'Course Explorer v2',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
         useMaterial3: true,
       ),
       home: const MainShellScreen(),

@@ -64,27 +64,26 @@ class CoursesTab extends StatelessWidget {
     if (confirmed != true) return;
     if (item.id == null) return;
 
-    if (!context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
 
     try {
       final provider = context.read<CourseProvider>();
       await provider.removeCourse(item.id!, item.code);
 
-      if (!context.mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.clearSnackBars();
+      messenger.showSnackBar(
         SnackBar(
           content: Text('Course "${item.title}" berhasil dihapus'),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
         ),
       );
     } catch (e) {
-      if (!context.mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.clearSnackBars();
+      messenger.showSnackBar(
         SnackBar(
-          content: Text('Gagal menghapus course: $e'),
+          content: Text('Gagal menghapus: $e'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),

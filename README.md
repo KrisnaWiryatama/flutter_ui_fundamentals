@@ -54,3 +54,5 @@ UI (Screens & Widgets) ➔ Provider (CourseProvider) ➔ Repository (CourseRepos
   - `title` (string): Nama mata kuliah
   - `credits` (int): Bobot SKS
   - `status` (string): "planned" | "active" | "done"
+
+Buat table database course di Supabase

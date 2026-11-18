@@ -51,23 +51,54 @@ class _HomePageState extends State<HomePage> {
             return const Center(child: Text('Gagal memuat profil'));
           }
           final p = snap.data!;
+          
           return ListView(
+            padding: const EdgeInsets.all(16),
             children: [
-              ListTile(
-                leading: const Icon(Icons.person),
-                title: const Text('Nama'),
-                subtitle: Text(p.name.isEmpty ? '-' : p.name),
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Selamat Datang, ${p.name.isEmpty ? "Pengguna" : p.name}!',
+                          style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 8),
+                      Text('Email: ${p.email}'),
+                      Text('Role: ${p.role.toUpperCase()}'),
+                    ],
+                  ),
+                ),
               ),
-              ListTile(
-                leading: const Icon(Icons.email),
-                title: const Text('Email'),
-                subtitle: Text(p.email),
-              ),
-              ListTile(
-                leading: const Icon(Icons.badge),
-                title: const Text('Role'),
-                subtitle: Text(p.role),
-              ),
+              const SizedBox(height: 20),
+              
+              // Tampilan bersyarat berdasarkan Role (Authorization UI / RoleGuard)
+              if (p.isSeeker) ...[
+                const Text('Menu Pencari Kos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 8),
+                FilledButton.icon(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Fitur Cari Kos aktif')),
+                    );
+                  },
+                  icon: const Icon(Icons.search),
+                  label: const Text('Cari & Jelajahi Kos'),
+                ),
+              ] else if (p.isOwner) ...[
+                const Text('Menu Pemilik Kos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 8),
+                FilledButton.icon(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Fitur Kelola Kos aktif')),
+                    );
+                  },
+                  icon: const Icon(Icons.add_business),
+                  label: const Text('Tambah / Kelola Kos Saya'),
+                ),
+              ],
             ],
           );
         },

@@ -9,7 +9,6 @@ import 'services/auth_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Inisialisasi Supabase menggunakan kredensial dari app_constants.dart
   await Supabase.initialize(
     url: supabaseUrl,
     anonKey: supabaseAnonKey,
@@ -31,7 +30,7 @@ class KosFinderApp extends StatelessWidget {
       ),
       navigatorKey: navigatorKey,
       scaffoldMessengerKey: messengerKey,
-      // Cek Session: Jika sudah login -> HomePage, jika belum -> LoginPage
+      // Check Session: Jika ada session aktif -> HomePage, jika tidak -> LoginPage
       home: AuthService.instance.isLoggedIn
           ? const HomePage()
           : const LoginPage(),

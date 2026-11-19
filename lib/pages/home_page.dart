@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/profile_service.dart';
 import '../services/kos_service.dart';
+import '../services/notification_service.dart';
 import '../widgets/role_guard.dart';
 import 'add_kos_page.dart';
 import 'login_page.dart';
@@ -22,6 +23,9 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _profileFuture = ProfileService().getMyProfile();
     _kosFuture = KosService().fetchAll();
+
+    // Inisialisasi Firebase Cloud Messaging (izin, token, foreground listener)
+    NotificationService.instance.init();
   }
 
   void _refreshKos() {

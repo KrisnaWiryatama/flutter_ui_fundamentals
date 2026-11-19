@@ -51,10 +51,10 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'GANTI_DENGAN_ANDROID_API_KEY_ANDA',
-    appId: 'GANTI_DENGAN_ANDROID_APP_ID_ANDA',
-    messagingSenderId: 'GANTI_DENGAN_MESSAGING_SENDER_ID_ANDA',
-    projectId: 'GANTI_DENGAN_PROJECT_ID_ANDA',
-    storageBucket: 'GANTI_DENGAN_PROJECT_ID_ANDA.appspot.com',
+    apiKey: 'AIzaSyBHRtecr8mo8-od_2PdVWkSAViOhYk3iTI',
+    appId: '1:880501124401:android:4d5e799f3c2901bf4f5410',
+    messagingSenderId: '880501124401',
+    projectId: 'kosfinder-9f6cf',
+    storageBucket: 'kosfinder-9f6cf.firebasestorage.app',
   );
 }

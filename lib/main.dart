@@ -22,8 +22,8 @@ Future<void> main() async {
 
   // Inisialisasi Supabase (Ganti URL & Anon Key dengan project Supabase Anda)
   await Supabase.initialize(
-    url: 'https://YOUR_PROJECT_ID.supabase.co',
-    anonKey: 'YOUR_SUPABASE_ANON_KEY',
+    url: 'https://gbywcfvycbeilebvpjfc.supabase.co',
+    anonKey: 'sb_publishable_C3kGXEv6SaZDu_w3-kvwTg_hSICG-g-'
   );
   
   runApp(const KosFinderApp());
